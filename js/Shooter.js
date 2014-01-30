@@ -12,8 +12,8 @@ SHOOTER.ZONE_MID_Y = 1000;
 //  GAME PROTOTYPE
 //-----------------------------------------------------
 
-SHOOTER.Game = function( showInfo, scene, sceneback){
-	this.stat = new SHOOTER.Stat( showInfo );
+SHOOTER.Game = function( scene, sceneback, showInfo, showScore ){
+	this.stat = new SHOOTER.Stat( showInfo , showScore );
 
     this.scene = scene;
     this.sceneback = sceneback;
@@ -32,14 +32,14 @@ SHOOTER.Game = function( showInfo, scene, sceneback){
 
     this.time = 0;
 
-    this.onShoot = false;
+    this.onMouseDown = false;
     this.isMouseMove = false;
     this.isStartGame = false;
     this.banking=0;
 
     this.zoneGeo = new THREE.PlaneGeometry( 1, 1 );
     this.zoneMat = new THREE.MeshBasicMaterial( { color: 0x111111, side: THREE.BackSide } );
-
+    this.oldy =0;
     this.zone = null;
 }
 SHOOTER.Game.prototype = {
@@ -65,7 +65,7 @@ SHOOTER.Game.prototype = {
     initLevel:function(){
         this.isStartGame = true;
     },
-    moveShip:function(x,y){
+    mouseMove:function( x, y ){
         this.ship.position.x = x / SHOOTER.FACTOR;
         this.ship.position.y = y / SHOOTER.FACTOR;
         this.isMouseMove =true;
@@ -81,14 +81,11 @@ SHOOTER.Game.prototype = {
     },
     update:function(){
 
-        if (this.banking !== 0 && !this.isMouseMove) {
-            if (this.banking > 0) this.banking--;
-            else this.banking++;
+        this.banking = this.ship.position.y - this.oldy;
+        this.ship.rotation.x = this.banking * SHOOTER.ToRad;
+        this.ship.update();
 
-            this.ship.rotation.x = this.banking*SHOOTER.ToRad;
-        }
-
-        if(this.onShoot)this.bullet.shoot();
+        if(this.onMouseDown)this.bullet.shoot();
         this.bullet.update();
 
         if(this.isStartGame){
@@ -102,7 +99,7 @@ SHOOTER.Game.prototype = {
             this.bulletEnemy.update();
         }
 
-        this.isMouseMove = false;
+        this.oldy = this.ship.position.y;
     }
 
 }
@@ -111,8 +108,9 @@ SHOOTER.Game.prototype = {
 //  GAME STAT
 //-----------------------------------------------------
 
-SHOOTER.Stat = function( showInfo ){
+SHOOTER.Stat = function( showInfo, showScore ){
 	this.score = "";
+    this.infos = "";
 	this.point = 0;
 	this.shipHealth = 0;
 	this.kills = 0;
@@ -122,27 +120,31 @@ SHOOTER.Stat = function( showInfo ){
 	this.shots = 0;
 	this.gameComplete = 0;
     this.showInfo = showInfo;
+    this.showScore = showScore;
 }
 SHOOTER.Stat.prototype = {
     constructor: SHOOTER.Stat,
-    setStat:function(name, value){
+    setStat:function( name, value ){
     	this[name] = value;
         this.update();
     },
-    updateStat:function(name, value){
+    updateStat:function( name, value ){
         this[name] += value;
         this.update();
     },
     update:function(){
     	this.score = [
-    	    "SCORE " + this.points + "<br>",
-		    "HEALTH " + this.shipHealth + "<br>",
-		    "Kill " + this.kills + "<br>",
-		    "Shoot " + this.shots + "<br>",
-		    "Hit " + this.hits + "<br>",
-		    "Misse " + this.misses + "<br>"
+    	    "SCORE " + this.points + " ",
+		    "HEALTH " + this.shipHealth
 		].join("\n");
-        this.showInfo(this.score);
+        this.infos = [
+            "Kill " + this.kills + "<br>",
+            "Shoot " + this.shots + "<br>",
+            "Hit " + this.hits + "<br>",
+            "Misse " + this.misses + "<br>"
+        ].join("\n");
+        this.showScore(this.score)
+        this.showInfo(this.infos);
     }
 }
 
@@ -156,13 +158,16 @@ SHOOTER.Ship = function(){
     this.life = 3;
     this.health = 0;
     this.position = new THREE.Vector3( 0, 0, 0 );
+    this.rotation = null;
     this.geo = null;
     this.mat = null;
     this.mesh = null;
+    this.inDamage = false;
 }
 
 SHOOTER.Ship.prototype = {
     constructor: SHOOTER.Ship,
+
     init:function(){
         this.health = this.maxHealth;
         this.parent.stat.setStat("shipHealth", this.health);
@@ -173,8 +178,10 @@ SHOOTER.Ship.prototype = {
         this.parent.scene.add(this.mesh);
         this.mesh.position.y = SHOOTER.ZONE_Y;
         this.position = this.mesh.position;
+        this.rotation = this.mesh.rotation;
     },
     update:function(){
+        if(this.inDamage){this.inDamage= false; this.mat.color.setHex(0xFF8000);}
     },
     takeDamage:function(n){
         this.health -= n;
@@ -182,6 +189,8 @@ SHOOTER.Ship.prototype = {
             this.health = 0;
             this.kill();
         } else {
+            this.mat.color.setHex(0xffffff);
+            this.inDamage = true; 
             // smallExplosion
         }
         this.parent.stat.setStat("shipHealth", this.health);
@@ -205,6 +214,7 @@ SHOOTER.Bullet = function(){
 
 SHOOTER.Bullet.prototype = {
     constructor: SHOOTER.Bullet,
+
     init:function(){
         this.bullets = [];
         this.geo = new THREE.CubeGeometry(10,10,30);
@@ -263,8 +273,10 @@ SHOOTER.Enemy = function(){
 
     this.shootEvery = 50;
 }
+
 SHOOTER.Enemy.prototype = {
     constructor: SHOOTER.Enemy,
+
     init:function(){
         this.geo = new THREE.CubeGeometry(60,50,120);
         this.mat = new THREE.MeshBasicMaterial( { color: 0x00FF00 } );
@@ -320,7 +332,7 @@ SHOOTER.Enemy.prototype = {
         }
 
     },
-    takeDamage:function(n , d){
+    takeDamage:function( n, d ){
         this.enemysHealth[n] -= d;
         this.parent.stat.updateStat("hits", 1);
     },
@@ -356,7 +368,7 @@ SHOOTER.EnemyBullet.prototype = {
         this.bullets = [];
         this.bulletsSpeed = [];
     },
-    shoot:function( e , eSpeed ){
+    shoot:function( e, eSpeed ){
         var b =  new THREE.Mesh( this.geo, this.mat );
         var pos = e.position.clone();
         b.position.copy(pos.add(new THREE.Vector3(50, 0, 0)));
@@ -400,7 +412,7 @@ SHOOTER.EnemyBullet.prototype = {
 //  DISTANCE TEST
 //-----------------------------------------------------
 
-SHOOTER.HitTest = function(p1, p2, zone){
+SHOOTER.HitTest = function( p1, p2, zone ){
     var x = p2.position.x-p1.position.x;
     var y = p2.position.y-p1.position.y;
     if( Math.sqrt(x*x + y*y) < zone) return true;
