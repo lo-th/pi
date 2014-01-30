@@ -50,7 +50,7 @@ var camera, scene, sceneback, renderer, container, center, projector, content;
 var info = document.getElementById("info");
 
 var Game;
-var factor = 4.66;
+var Deep = 0;
 var fps=0, time, time_prev=0, fpsint = 0;
 var timer, delay, timerStep, t01, ms =0 , maxms = 0;
 
@@ -75,20 +75,21 @@ function init() {
     scene = new THREE.Scene();
 
     camera = new THREE.PerspectiveCamera( 30, window.innerWidth / (window.innerHeight-100), 1, 20000 );
-    center = new THREE.Vector3(0,1000,0);
+    center = new THREE.Vector3();
     camera.position.z = -4000;
-    camera.position.y = 1000;
     camera.lookAt(center);
+
+    var vFOV = camera.fov * Math.PI / 180;
+    Deep = -(2 * Math.tan( vFOV / 2 ) * camera.position.z).toFixed(2);
+
+    Game = new SHOOTER.Game( showInfo, scene, sceneback );
+    Game.init();
 
     window.addEventListener( 'resize', resize, false );
     container.addEventListener( 'mousedown', onMouseDown, false );
     container.addEventListener( 'mousemove', onMouseMove, false );
     container.addEventListener( 'mouseup', onMouseUp, false );
-
-
-    Game = new SHOOTER.Game( showInfo, scene );
-    Game.init();
-
+    resize();
     setInterval(gameLoop, 1000/60 );
 }
 
@@ -99,8 +100,8 @@ function onMouseUp(e) {
     Game.onShoot=false;
 }
 function onMouseMove(e) {
-    var x = (-(e.clientX - ( window.innerWidth  *0.5)) * factor) ;
-    var y = (-((e.clientY - (50+(window.innerHeight-100) *0.5)) * factor) + center.y) ;
+    var x = -(e.clientX - ( window.innerWidth  *0.5))  ;
+    var y = -(e.clientY - (50+(window.innerHeight-100) *0.5)) ;
     Game.moveShip(x,y);
 }
 
@@ -112,12 +113,9 @@ function loop() {
     requestAnimationFrame( loop );
 
     t01 = Date.now();
-    //Game.update();
 
     renderer.render( sceneback, camera )
     renderer.render( scene, camera );
-
-    
 
     time = Date.now();
     ms = time - t01;
@@ -131,6 +129,7 @@ function resize() {
     renderer.setSize( window.innerWidth, window.innerHeight-100 );
     camera.aspect = window.innerWidth / (window.innerHeight-100);
     camera.updateProjectionMatrix();
+    Game.resize(window.innerWidth, window.innerHeight-100, ((window.innerHeight-100) / Deep).toFixed(2));
 }
 
 function showInfo( txt ){

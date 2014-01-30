@@ -1,17 +1,22 @@
 var SHOOTER = { REVISION: '0.1' };
 
 SHOOTER.ToRad = Math.PI / 180;
+SHOOTER.FACTOR = 0.3;
+SHOOTER.MARGIN = 40;//inPixel
+SHOOTER.ZONE_X = 2000;
+SHOOTER.ZONE_Y = 1000;
+SHOOTER.ZONE_MID_X = 2000;
+SHOOTER.ZONE_MID_Y = 1000;
 
 //-----------------------------------------------------
 //  GAME PROTOTYPE
 //-----------------------------------------------------
 
-SHOOTER.Game = function( showInfo, scene ){
+SHOOTER.Game = function( showInfo, scene, sceneback){
 	this.stat = new SHOOTER.Stat( showInfo );
-    //this.showInfo = showInfo;
 
-    this.viewLimit = new THREE.Vector3( 2000, 1000, 1000 );
     this.scene = scene;
+    this.sceneback = sceneback;
 
     this.ship = new SHOOTER.Ship();
     this.bullet = new SHOOTER.Bullet();
@@ -27,25 +32,22 @@ SHOOTER.Game = function( showInfo, scene ){
 
     this.time = 0;
 
-    this.onShoot=false;
-    this.isMouseMove=false;
+    this.onShoot = false;
+    this.isMouseMove = false;
+    this.isStartGame = false;
     this.banking=0;
-    
 
+    this.zoneGeo = new THREE.PlaneGeometry( 1, 1 );
+    this.zoneMat = new THREE.MeshBasicMaterial( { color: 0x111111, side: THREE.BackSide } );
 
-
-
-
-
-   // this.init();
+    this.zone = null;
 }
 SHOOTER.Game.prototype = {
     constructor: SHOOTER.Game,
     init:function(){
 
-        this.viewLimit = new THREE.Vector3( 2000, 1000, 1000 );
-
-        console.log(this.viewLimit.x)
+        this.zone = new THREE.Mesh(this.zoneGeo, this.zoneMat);
+        sceneback.add(this.zone);
 
         this.ship.parent = this;
         this.ship.init();
@@ -59,34 +61,25 @@ SHOOTER.Game.prototype = {
         this.bulletEnemy.parent = this;
         this.bulletEnemy.init();
 
-        
-
-
     },
     initLevel:function(){
-
-        //this.enemyTimer = 
-        this.enemyTimer = setTimeout(this.addEnemy(), 1000 * this.enemyInterval );//setTimeout
-
-
-        this.updateTimer = setInterval(this.update(), 1000/60);
-
+        this.isStartGame = true;
     },
     moveShip:function(x,y){
-        this.ship.position.x = x;
-        this.ship.position.y = y;
+        this.ship.position.x = x / SHOOTER.FACTOR;
+        this.ship.position.y = y / SHOOTER.FACTOR;
         this.isMouseMove =true;
     },
+    resize:function( x, y, f ){
+        SHOOTER.FACTOR = f;
+        SHOOTER.ZONE_X = (x / SHOOTER.FACTOR)-(40/ SHOOTER.FACTOR);
+        SHOOTER.ZONE_Y = (y / SHOOTER.FACTOR)-(40/ SHOOTER.FACTOR);
+        SHOOTER.ZONE_MID_X = SHOOTER.ZONE_X * 0.5;
+        SHOOTER.ZONE_MID_Y = SHOOTER.ZONE_Y * 0.5;
+        this.zone.scale.x = (SHOOTER.ZONE_X)//+(40/ SHOOTER.FACTOR);
+        this.zone.scale.y = (SHOOTER.ZONE_Y)//+(40/ SHOOTER.FACTOR);
+    },
     update:function(){
-        
-
-
-        this.enemyInterval++;
-        if(this.enemyInterval === 60){
-            this.enemyInterval = 0;
-            this.enemy.add();
-        }
-        if(this.onShoot)this.bullet.shoot();
 
         if (this.banking !== 0 && !this.isMouseMove) {
             if (this.banking > 0) this.banking--;
@@ -95,10 +88,19 @@ SHOOTER.Game.prototype = {
             this.ship.rotation.x = this.banking*SHOOTER.ToRad;
         }
 
-        //this.ship.update();
-        this.enemy.update();
+        if(this.onShoot)this.bullet.shoot();
         this.bullet.update();
-        this.bulletEnemy.update();
+
+        if(this.isStartGame){
+            this.enemyInterval++;
+            if(this.enemyInterval === 60){
+                this.enemyInterval = 0;
+                this.enemy.add();
+            }
+            
+            this.enemy.update();
+            this.bulletEnemy.update();
+        }
 
         this.isMouseMove = false;
     }
@@ -169,7 +171,7 @@ SHOOTER.Ship.prototype = {
 
         this.mesh = new THREE.Mesh( this.geo, this.mat );
         this.parent.scene.add(this.mesh);
-        this.mesh.position.y = this.parent.viewLimit.y;
+        this.mesh.position.y = SHOOTER.ZONE_Y;
         this.position = this.mesh.position;
     },
     update:function(){
@@ -199,8 +201,6 @@ SHOOTER.Bullet = function(){
     this.hitZone = 50;
     this.geo = null;
     this.mat = null;
-
-    this.init();
 }
 
 SHOOTER.Bullet.prototype = {
@@ -228,29 +228,22 @@ SHOOTER.Bullet.prototype = {
             j = this.parent.enemy.enemys.length;
             while(j--){
                 e = this.parent.enemy.enemys[j];
-                if (this.proximity(b, e)) {
+                if (SHOOTER.HitTest( b , e, this.hitZone)) {
                     this.parent.enemy.takeDamage(j, 1);
                     this.kill(i);
                     return;
                 }
             }
-            if (b.position.x < -this.parent.viewLimit.x) {
+            if (b.position.x < -SHOOTER.ZONE_MID_X ) {
                 this.kill(i);
                 this.parent.stat.updateStat("misses", 1);
             }
         }
     },
-    proximity:function(A , B){
-        var ax = ((A.position.x + this.parent.viewLimit.x) - (B.position.x + this.parent.viewLimit.x))// >> 0;
-        var ay = (A.position.y - B.position.y) //>> 0;
-        if ( ax < this.hitZone && ax > -this.hitZone && ay < this.hitZone && ay > -this.hitZone) return true;
-        else return false;
-    },
     kill:function(n){
         this.parent.scene.remove(this.bullets[n]);
         this.bullets.splice(n, 1);
     }
-
 }
 
 //-----------------------------------------------------
@@ -269,8 +262,6 @@ SHOOTER.Enemy = function(){
     this.enemysShootCount = null;
 
     this.shootEvery = 50;
-
-    //this.init();
 }
 SHOOTER.Enemy.prototype = {
     constructor: SHOOTER.Enemy,
@@ -286,7 +277,7 @@ SHOOTER.Enemy.prototype = {
     },
     add:function(){
         var b =  new THREE.Mesh( this.geo, this.mat );
-        b.position.copy(new THREE.Vector3(-this.parent.viewLimit.x, (Math.random() * this.parent.viewLimit.y) + 600, this.parent.viewLimit.z));
+        b.position.copy(new THREE.Vector3(-SHOOTER.ZONE_MID_X, -SHOOTER.ZONE_MID_Y+ (Math.random() * SHOOTER.ZONE_Y), 0));
         this.parent.scene.add(b);
         var n = this.enemys.length;
         this.enemys[n] = b;
@@ -311,13 +302,13 @@ SHOOTER.Enemy.prototype = {
             }
             // move up and down
             if (this.enemysWobble[i] != 0) {
-                if (this.enemysWobble[i] > 0 && e.position.y > (this.parent.viewLimit.y + 600)) this.enemysWobble[i] *= -1;
-                else if (this.enemysWobble[i] < 0 && e.position.y < 600) this.enemysWobble[i] *= -1;
+                if (this.enemysWobble[i] > 0 && e.position.y > SHOOTER.ZONE_MID_Y) this.enemysWobble[i] *= -1;
+                else if (this.enemysWobble[i] < 0 && e.position.y < -SHOOTER.ZONE_MID_Y) this.enemysWobble[i] *= -1;
                 e.position.y += this.enemysWobble[i];
                 e.rotation.x += (this.enemysWobble[i] / 10)*SHOOTER.ToRad;
             }
             // kill enemy if out of screen
-            if (e.position.x > this.parent.viewLimit.x) {
+            if (e.position.x > SHOOTER.ZONE_MID_X) {
                 this.kill(i);
             }
             // kill enemy if health to 0
@@ -355,8 +346,6 @@ SHOOTER.EnemyBullet = function( ){
     this.hitZone = 50;
     this.geo = null;
     this.mat = null;
-
-    //this.init();
 }
 SHOOTER.EnemyBullet.prototype = {
     constructor: SHOOTER.EnemyBullet,
@@ -379,12 +368,14 @@ SHOOTER.EnemyBullet.prototype = {
     update:function(){
         var b, e;
         var i = this.bullets.length;
+        var hit;
 
         while(i--){
             b = this.bullets[i]
             b.position.x += this.bulletsSpeed[i];
            // if this bullet is hitting the player ship
-            if (this.proximity(b, this.parent.ship)) {
+
+           if (SHOOTER.HitTest( b , this.parent.ship, this.hitZone)) {
                 // add damage to player ship
                 this.parent.ship.takeDamage(10);
                 // destroy bullet
@@ -392,16 +383,10 @@ SHOOTER.EnemyBullet.prototype = {
                 return;
             }
             // destroy bullet if out of screen
-            if (b.position.x > this.parent.viewLimit.x) {
+            if (b.position.x > SHOOTER.ZONE_MID_X) {
                 this.kill(i);
             }
         }
-    },
-    proximity:function(A , B){
-        var ax = ((A.position.x + this.parent.viewLimit.x) - (B.position.x + this.parent.viewLimit.x))// >> 0;
-        var ay = (A.position.y - B.position.y) //>> 0;
-        if ( ax < this.hitZone && ax > -this.hitZone && ay < this.hitZone && ay > -this.hitZone) return true;
-        else return false;
     },
     kill:function(n){
         this.parent.scene.remove(this.bullets[n]);
@@ -410,3 +395,27 @@ SHOOTER.EnemyBullet.prototype = {
     }
 
 }
+
+//-----------------------------------------------------
+//  DISTANCE TEST
+//-----------------------------------------------------
+
+SHOOTER.HitTest = function(p1, p2, zone){
+    var x = p2.position.x-p1.position.x;
+    var y = p2.position.y-p1.position.y;
+    if( Math.sqrt(x*x + y*y) < zone) return true;
+    else return false;
+}
+
+/*SHOOTER.Distance2d = function(p1, p2){
+    var xd = p2.position.x-p1.position.x;
+    var yd = p2.position.y-p1.position.y;
+    return Math.sqrt(xd*xd + yd*yd);
+}
+
+SHOOTER.Distance3d = function(p1, p2){
+    var xd = p2.position.x-p1.position.x;
+    var yd = p2.position.y-p1.position.y;
+    var zd = p2.position.z-p1.position.z;
+    return Math.sqrt(xd*xd + yd*yd + zd*zd);
+}*/
