@@ -1,70 +1,141 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset='utf-8'>
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" type="text/css" href="css/stylesheet.css" media="screen" />
-    <link rel="stylesheet" type="text/css" href="css/pygment_trac.css" media="screen" />
-    <link rel="stylesheet" type="text/css" href="css/print.css" media="print" />
-    <title>Pi by lo-th</title>
-  </head>
+<html lang="en">
+<head>
+<title>Three Shooter</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="chrome=1">
+<meta http-equiv="X-UA-Compatible" content="IE=11" />
 
-  <body>
-    <div id="container">
-      <div class="inner">
+<style>
+    body {
+        margin: 0px;
+        background-color: #222222;
+        overflow: hidden;
+        color: #FFFFFF;
+        font-family: monospace;
+        font-size: 11px;
+    }
+    #interface{
+        position: absolute;
+        left:10px;
+        top:10px;
+        width:600px;
+        height:20px;
+    }
+    #info{
+        pointer-events:none;
+        position: absolute;
+        left:10px;
+        top:60px;
+        width:300px;
+        height:200px;
+    }
+</style>
 
-        <header>
-          <h1>Pi</h1>
-          <h2>game test html 5</h2>
-        </header>
+<script src="js/three.js"></script>
+<script src="js/Shooter.js"></script>
 
-        <section id="downloads" class="clearfix">
-          <a href="https://github.com/lo-th/pi/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
-          <a href="https://github.com/lo-th/pi/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
-          <a href="https://github.com/lo-th/pi" id="view-on-github" class="button"><span>View on GitHub</span></a>
-        </section>
+</head>
+<body>
+<div id='container'></div>
+<div id='interface'>
+    <input type="button" value="PLAY" onClick=Game.initLevel()>
+</div>
+<div id='info'>Yoo</div>
+</body>   
+<script type="text/javascript">
 
-        <hr>
+var camera, scene, sceneback, renderer, container, center, projector, content;
+var info = document.getElementById("info");
 
-        <section id="test" class="clearfix">
-          <a href="https://github.com/lo-th/pi/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
-          <a href="https://github.com/lo-th/pi/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
-          <a href="https://github.com/lo-th/pi" id="view-on-github" class="button"><span>View on GitHub</span></a>
-        </section>
+var Game;
+var factor = 4.66;
+var fps=0, time, time_prev=0, fpsint = 0;
+var timer, delay, timerStep, t01, ms =0 , maxms = 0;
 
-        <hr>
+init();
+loop();
 
-        <section id="main_content">
-          <h3>
-<a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages"><span class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
+function init() {
+    renderer = new THREE.WebGLRenderer({precision: "mediump", antialias:false});
+    renderer.setSize( window.innerWidth, window.innerHeight-100 );
+    renderer.autoClearColor = false;
+    renderer.gammaInput = true;
+    renderer.gammaOutput = true;
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+    renderer.domElement.style.position = "absolute";
+    renderer.domElement.style.top = 50 + "px";
+    renderer.domElement.style.left = "0px";
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
-</code></pre>
+    container = document.getElementById("container");
+    container.appendChild( renderer.domElement );
 
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+    sceneback = new THREE.Scene();
+    scene = new THREE.Scene();
 
-<a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
+    camera = new THREE.PerspectiveCamera( 30, window.innerWidth / (window.innerHeight-100), 1, 20000 );
+    center = new THREE.Vector3(0,1000,0);
+    camera.position.z = -4000;
+    camera.position.y = 1000;
+    camera.lookAt(center);
 
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+    window.addEventListener( 'resize', resize, false );
+    container.addEventListener( 'mousedown', onMouseDown, false );
+    container.addEventListener( 'mousemove', onMouseMove, false );
+    container.addEventListener( 'mouseup', onMouseUp, false );
 
-<h3>
-<a name="support-or-contact" class="anchor" href="#support-or-contact"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
 
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
-        </section>
+    Game = new SHOOTER.Game( showInfo, scene );
+    Game.init();
 
-        <footer>
-          Pi is maintained by <a href="https://github.com/lo-th">lo-th</a><br>
-          This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
-        </footer>
+    setInterval(gameLoop, 1000/60 );
+}
 
-        
-      </div>
-    </div>
-  </body>
+function onMouseDown(e) {
+    Game.onShoot=true;
+}
+function onMouseUp(e) {
+    Game.onShoot=false;
+}
+function onMouseMove(e) {
+    var x = (-(e.clientX - ( window.innerWidth  *0.5)) * factor) ;
+    var y = (-((e.clientY - (50+(window.innerHeight-100) *0.5)) * factor) + center.y) ;
+    Game.moveShip(x,y);
+}
+
+function gameLoop() {
+    Game.update();
+}
+
+function loop() {
+    requestAnimationFrame( loop );
+
+    t01 = Date.now();
+    //Game.update();
+
+    renderer.render( sceneback, camera )
+    renderer.render( scene, camera );
+
+    
+
+    time = Date.now();
+    ms = time - t01;
+    if(ms > maxms)maxms = ms;
+    if (time - 1000 > time_prev) {
+        time_prev = time; fpsint = fps; fps = 0;maxms=0;
+    } fps++;
+}
+
+function resize() {
+    renderer.setSize( window.innerWidth, window.innerHeight-100 );
+    camera.aspect = window.innerWidth / (window.innerHeight-100);
+    camera.updateProjectionMatrix();
+}
+
+function showInfo( txt ){
+    info.innerHTML = fpsint +" fps " +  ms+"/"+maxms + " ms<br><br>"+ txt;
+}
+
+</script>
 </html>
