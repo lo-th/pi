@@ -1,35 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<title>Three Shooter</title>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0, initial-scale=1">
 <meta http-equiv="X-UA-Compatible" content="chrome=1">
 <meta http-equiv="X-UA-Compatible" content="IE=11" />
+<meta name="description" content="Nano 3d games test" />
+<meta name="keywords" content="game, html 5, three, 3d, " />
+<meta name="author" content="loth 2014" />
+<title>Nano shoot</title>
 
 <style>
-    body { margin: 0px; background-color: #222222; overflow: hidden; color: #FFFFFF; font-family: monospace; font-size: 11px; }
-    #interface{ position: absolute; left:10px; top:10px; width:600px; height:20px; }
+    body { margin: 0px; background-color: #e74c3c; overflow: hidden; color: #f0f0f0; font-family: monospace; font-size: 11px; }
+    #interface{ position: absolute; left:calc(50% - 150px); top:calc(50% - 65px); width:300px; height:65px; display:block; text-align:center;}
     #info{ position: absolute; left:10px; top:60px; width:300px; height:200px; pointer-events:none; }
-    #score{ position: absolute; left:100px; top:15px; width:400px; height:40px; pointer-events:none; }
-    #int{ font-size: 20px; }
+    #score{ position: absolute; left:20px; top:15px; width:400px; height:40px; pointer-events:none; font-size: 20px; }
+    #int{ font-size: 50px; }
+    #int1, #int2{ font-size: 40px; }
     *{ box-sizing:border-box; -webkit-box-sizing:border-box; -moz-box-sizing:border-box;
         user-select:none; -moz-user-select:none; -webkit-user-select:none; }
 </style>
 
 <script src="js/three.min.js"></script>
 <script src="js/Shooter.js"></script>
+<script src="js/Platform.js"></script>
 
 </head>
 
 <body>
 <div id='container'></div>
 <div id='interface'>
-    <input type="button" value="PLAY" onClick=Game.initLevel() id='int'>
+<input type="button" value="SHOOTER" onClick=startShooter() id='int1'>
+<input type="button" value="PLATFORM" onClick=startPlatform() id='int2'>
+    <input type="button" value="PLAY" onClick=startGame() id='int' style='display:none'>
 </div>
-<div id='score'>Yoo</div>
-<div id='info'>Yoo</div>
-</body>   
+<div id='score'></div>
+<div id='info'></div>
+</body>
+
 <script type="text/javascript">
 
 var camera, scene, sceneback, renderer, container, center, projector, content;
@@ -37,6 +45,7 @@ var info = document.getElementById("info");
 var score = document.getElementById("score");
 var stat = { fps:60, ms:0, mms:0, t0:0, t1:0, t2:0, n:0 };
 var view = { w:10, h:10, mid_w:5, mid_h:5, aspect:1, deep:0, pixelRatio:1 };
+var mouse = { x:0, y:0 }
 var Game;
 
 init();
@@ -60,39 +69,68 @@ function init() {
 
     camera = new THREE.PerspectiveCamera( 30, 1, 1, 20000 );
     center = new THREE.Vector3();
-    camera.position.z = -4000;
+    camera.position.z = -5000;
     camera.lookAt(center);
 
     // for pixel calculation
     view.deep = -( 2 * Math.tan( (camera.fov * Math.PI / 180) / 2 ) * camera.position.z);
 
     window.addEventListener( 'resize', resize, false );
+    resize();
+}
+
+function startPlatform() {
+    document.getElementById("int1").style.display= "none";
+    document.getElementById("int2").style.display= "none";
+    document.getElementById("int").style.display= "block";
+    Game = new PLATFORM.Game( scene, sceneback, showInfo, showScore );
+    Game.init();
+    Game.resize( view.w, view.h, view.pixelRatio );
+    setInterval(gameLoop, 1000/60 );
+    initListener();
+}
+
+function startShooter() {
+    document.getElementById("int1").style.display= "none";
+    document.getElementById("int2").style.display= "none";
+    document.getElementById("int").style.display= "block";
+    Game = new SHOOTER.Game( scene, sceneback, showInfo, showScore );
+    Game.init();
+    Game.resize( view.w, view.h, view.pixelRatio );
+    setInterval(gameLoop, 1000/60 );
+    initListener();
+}
+
+function startGame() {
+    document.getElementById("interface").style.display= "none";
+    Game.initLevel();
+}
+
+function initListener() {
     container.addEventListener( 'mousedown', onMouseDown, false );
     container.addEventListener( 'mousemove', onMouseMove, false );
     container.addEventListener( 'mouseup', onMouseUp, false );
-
-    Game = new SHOOTER.Game( scene, sceneback, showInfo, showScore );
-    Game.init();
-
-    resize();
-    setInterval(gameLoop, 1000/60 );
 }
 
 function onMouseDown(e) {
+    mouse.x = -( e.clientX - view.mid_w );
+    mouse.y = -( e.clientY - view.mid_h );
     Game.onMouseDown = true;
 }
 
 function onMouseUp(e) {
     Game.onMouseDown = false;
+    Game.onMouseMove = false;
 }
 
 function onMouseMove(e) {
-    var x = -( e.clientX - view.mid_w );
-    var y = -( e.clientY - view.mid_h );
-    Game.mouseMove( x, y );
+    mouse.x = -( e.clientX - view.mid_w );
+    mouse.y = -( e.clientY - view.mid_h );
+    Game.onMouseMove = true;
 }
 
 function gameLoop() {
+    Game.mousePos( mouse.x, mouse.y );
     Game.update();
 }
 
@@ -123,7 +161,7 @@ function resize() {
     renderer.setSize( view.w, view.h );
     camera.aspect = view.aspect;
     camera.updateProjectionMatrix();
-    Game.resize( view.w, view.h, view.pixelRatio );
+    if(Game) Game.resize( view.w, view.h, view.pixelRatio );
 }
 
 function showScore( txt ){

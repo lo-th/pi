@@ -1,8 +1,12 @@
+/**
+* Nano shooter prototype
+* @author LoTh / http://3dflashlo.wordpress.com/
+*/
+
 var SHOOTER = { REVISION: '0.1' };
 
 SHOOTER.ToRad = Math.PI / 180;
 SHOOTER.FACTOR = 0.3;
-SHOOTER.MARGIN = 40;//inPixel
 SHOOTER.ZONE_X = 2000;
 SHOOTER.ZONE_Y = 1000;
 SHOOTER.ZONE_MID_X = 2000;
@@ -33,17 +37,21 @@ SHOOTER.Game = function( scene, sceneback, showInfo, showScore ){
     this.time = 0;
 
     this.onMouseDown = false;
-    this.isMouseMove = false;
+    this.onMouseMove = false;
     this.isStartGame = false;
     this.banking=0;
 
     this.zoneGeo = new THREE.PlaneGeometry( 1, 1 );
     this.zoneMat = new THREE.MeshBasicMaterial( { color: 0x111111, side: THREE.BackSide } );
-    this.oldy =0;
+    this.oldy = 0;
     this.zone = null;
+
+    this.mouse = [0,0];
 }
+
 SHOOTER.Game.prototype = {
     constructor: SHOOTER.Game,
+
     init:function(){
 
         this.zone = new THREE.Mesh(this.zoneGeo, this.zoneMat);
@@ -65,17 +73,16 @@ SHOOTER.Game.prototype = {
     initLevel:function(){
         this.isStartGame = true;
     },
-    mouseMove:function( x, y ){
-        this.ship.position.x = x / SHOOTER.FACTOR;
-        this.ship.position.y = y / SHOOTER.FACTOR;
-        this.isMouseMove =true;
+    mousePos:function( x, y ){
+        this.mouse[0] = x / SHOOTER.FACTOR;
+        this.mouse[1] = y / SHOOTER.FACTOR;
     },
     resize:function( x, y, f ){
         SHOOTER.FACTOR = f;
-        SHOOTER.ZONE_X = (x / SHOOTER.FACTOR)-(40/ SHOOTER.FACTOR);
-        SHOOTER.ZONE_Y = (y / SHOOTER.FACTOR)-(40/ SHOOTER.FACTOR);
-        SHOOTER.ZONE_MID_X = SHOOTER.ZONE_X * 0.5;
-        SHOOTER.ZONE_MID_Y = SHOOTER.ZONE_Y * 0.5;
+        SHOOTER.ZONE_X =  Math.floor((x / SHOOTER.FACTOR)-(40/ SHOOTER.FACTOR));
+        SHOOTER.ZONE_Y =  Math.floor((y / SHOOTER.FACTOR)-(40/ SHOOTER.FACTOR));
+        SHOOTER.ZONE_MID_X = Math.floor(SHOOTER.ZONE_X * 0.5);
+        SHOOTER.ZONE_MID_Y =  Math.floor(SHOOTER.ZONE_Y * 0.5);
         this.zone.scale.x = (SHOOTER.ZONE_X)//+(40/ SHOOTER.FACTOR);
         this.zone.scale.y = (SHOOTER.ZONE_Y)//+(40/ SHOOTER.FACTOR);
     },
@@ -83,9 +90,13 @@ SHOOTER.Game.prototype = {
 
         this.banking = this.ship.position.y - this.oldy;
         this.ship.rotation.x = this.banking * SHOOTER.ToRad;
-        this.ship.update();
+        if(this.onMouseMove){
+            this.ship.position.x = this.mouse[0];
+            this.ship.position.y = this.mouse[1];
+        }
+        if(this.onMouseDown) this.bullet.shoot();
 
-        if(this.onMouseDown)this.bullet.shoot();
+        this.ship.update();
         this.bullet.update();
 
         if(this.isStartGame){
@@ -113,6 +124,7 @@ SHOOTER.Stat = function( showInfo, showScore ){
     this.infos = "";
 	this.point = 0;
 	this.shipHealth = 0;
+    this.life = 0;
 	this.kills = 0;
 	this.hits = 0;
 	this.points = 0;
@@ -122,8 +134,10 @@ SHOOTER.Stat = function( showInfo, showScore ){
     this.showInfo = showInfo;
     this.showScore = showScore;
 }
+
 SHOOTER.Stat.prototype = {
     constructor: SHOOTER.Stat,
+
     setStat:function( name, value ){
     	this[name] = value;
         this.update();
@@ -135,7 +149,8 @@ SHOOTER.Stat.prototype = {
     update:function(){
     	this.score = [
     	    "SCORE " + this.points + " ",
-		    "HEALTH " + this.shipHealth
+		    "HEALTH " + this.shipHealth + " ",
+            "LIFE " + this.life
 		].join("\n");
         this.infos = [
             "Kill " + this.kills + "<br>",
@@ -171,8 +186,9 @@ SHOOTER.Ship.prototype = {
     init:function(){
         this.health = this.maxHealth;
         this.parent.stat.setStat("shipHealth", this.health);
+        this.parent.stat.setStat("life", this.life);
         this.geo = new THREE.CubeGeometry(120,30,100);
-        this.mat = new THREE.MeshBasicMaterial( { color: 0xFF8000 } );
+        this.mat = new THREE.MeshBasicMaterial( { color: 0xe74c3c } );
 
         this.mesh = new THREE.Mesh( this.geo, this.mat );
         this.parent.scene.add(this.mesh);
@@ -181,7 +197,7 @@ SHOOTER.Ship.prototype = {
         this.rotation = this.mesh.rotation;
     },
     update:function(){
-        if(this.inDamage){this.inDamage= false; this.mat.color.setHex(0xFF8000);}
+        if(this.inDamage){this.inDamage= false; this.mat.color.setHex(0xe74c3c);}
     },
     takeDamage:function(n){
         this.health -= n;
@@ -196,6 +212,10 @@ SHOOTER.Ship.prototype = {
         this.parent.stat.setStat("shipHealth", this.health);
     },
     kill:function(){
+        this.life--;
+        this.health = this.maxHealth;
+        this.parent.stat.setStat("life", this.life);
+        this.parent.stat.setStat("shipHealth", this.health);
     }
 }
 
@@ -264,13 +284,11 @@ SHOOTER.Enemy = function(){
     this.parent = null;
     this.geo = null;
     this.mat = null;
-
     this.enemys = null;
     this.enemysHealth = null;
     this.enemysSpeed = null;
     this.enemysWobble = null;
     this.enemysShootCount = null;
-
     this.shootEvery = 50;
 }
 
@@ -279,7 +297,7 @@ SHOOTER.Enemy.prototype = {
 
     init:function(){
         this.geo = new THREE.CubeGeometry(60,50,120);
-        this.mat = new THREE.MeshBasicMaterial( { color: 0x00FF00 } );
+        this.mat = new THREE.MeshBasicMaterial( { color:0x3498db } ); ////0x52be7f
 
         this.enemys = [];
         this.enemysHealth = [];
@@ -359,6 +377,7 @@ SHOOTER.EnemyBullet = function( ){
     this.geo = null;
     this.mat = null;
 }
+
 SHOOTER.EnemyBullet.prototype = {
     constructor: SHOOTER.EnemyBullet,
 
