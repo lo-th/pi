@@ -42,7 +42,7 @@ SHOOTER.Game = function( scene, sceneback, showInfo, showScore ){
     this.banking=0;
 
     this.zoneGeo = new THREE.PlaneGeometry( 1, 1 );
-    this.zoneMat = new THREE.MeshBasicMaterial( { color: 0x111111, side: THREE.BackSide } );
+    this.zoneMat = new THREE.MeshBasicMaterial( { color: 0x101316, side: THREE.BackSide } );
     this.oldy = 0;
     this.zone = null;
 
@@ -79,12 +79,12 @@ SHOOTER.Game.prototype = {
     },
     resize:function( x, y, f ){
         SHOOTER.FACTOR = f;
-        SHOOTER.ZONE_X =  Math.floor((x / SHOOTER.FACTOR)-(40/ SHOOTER.FACTOR));
-        SHOOTER.ZONE_Y =  Math.floor((y / SHOOTER.FACTOR)-(40/ SHOOTER.FACTOR));
-        SHOOTER.ZONE_MID_X = Math.floor(SHOOTER.ZONE_X * 0.5);
-        SHOOTER.ZONE_MID_Y =  Math.floor(SHOOTER.ZONE_Y * 0.5);
-        this.zone.scale.x = (SHOOTER.ZONE_X)//+(40/ SHOOTER.FACTOR);
-        this.zone.scale.y = (SHOOTER.ZONE_Y)//+(40/ SHOOTER.FACTOR);
+        SHOOTER.ZONE_X =  Math.round((x / SHOOTER.FACTOR)-(40/ SHOOTER.FACTOR));
+        SHOOTER.ZONE_Y =  Math.round((y / SHOOTER.FACTOR)-(40/ SHOOTER.FACTOR));
+        SHOOTER.ZONE_MID_X = Math.round(SHOOTER.ZONE_X * 0.5);
+        SHOOTER.ZONE_MID_Y =  Math.round(SHOOTER.ZONE_Y * 0.5);
+        this.zone.scale.x = (SHOOTER.ZONE_X)+(40/ SHOOTER.FACTOR);
+        this.zone.scale.y = (SHOOTER.ZONE_Y)+(40/ SHOOTER.FACTOR);
     },
     update:function(){
 

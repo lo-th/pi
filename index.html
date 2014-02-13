@@ -11,16 +11,16 @@
 <title>Nano shoot</title>
 
 <style>
-    body { margin: 0px; background-color: #e74c3c; overflow: hidden; color: #f0f0f0; font-family: monospace; font-size: 11px; }
-    #interface{ position: absolute; left:calc(50% - 150px); top:calc(50% - 65px); width:300px; height:65px; display:block; text-align:center;}
+    body { margin: 0px; background-color: #202326; overflow: hidden; color: #f0f0f0; font-family: monospace; font-size: 11px; }
+    #interface{ position: absolute; left:calc(50% - 150px); top:calc(50% - 100px); width:300px; height:200px; display:block; text-align:center;}
     #info{ position: absolute; left:10px; top:60px; width:300px; height:200px; pointer-events:none; }
     #score{ position: absolute; left:20px; top:15px; width:400px; height:40px; pointer-events:none; font-size: 20px; }
-    #int{ font-size: 50px; }
-    #int1, #int2{ font-size: 40px; }
+    #int{ position: absolute; left:calc(50% - 74px); top:calc(50% - 34px); width:148px; height:68px; font-size: 50px; font-weight: bold}
+    #int1, #int2{ font-size: 50px; font-weight: bold}
     *{ box-sizing:border-box; -webkit-box-sizing:border-box; -moz-box-sizing:border-box;
         user-select:none; -moz-user-select:none; -webkit-user-select:none; }
 </style>
-
+!
 <script src="js/three.min.js"></script>
 <script src="js/Shooter.js"></script>
 <script src="js/Platform.js"></script>
@@ -31,8 +31,9 @@
 <div id='container'></div>
 <div id='interface'>
 <input type="button" value="SHOOTER" onClick=startShooter() id='int1'>
+<input type="button" value="PLAY" onClick=startGame() id='int' style='display:none'>
 <input type="button" value="PLATFORM" onClick=startPlatform() id='int2'>
-    <input type="button" value="PLAY" onClick=startGame() id='int' style='display:none'>
+    
 </div>
 <div id='score'></div>
 <div id='info'></div>
@@ -52,6 +53,9 @@ init();
 loop();
 
 function init() {
+    container = document.getElementById("container");
+    container.style.display="none";
+
     renderer = new THREE.WebGLRenderer({precision: "mediump", antialias:false});
     renderer.autoClearColor = false;
     renderer.gammaInput = true;
@@ -60,8 +64,6 @@ function init() {
     renderer.domElement.style.position = "absolute";
     renderer.domElement.style.top = 50 + "px";
     renderer.domElement.style.left = "0px";
-
-    container = document.getElementById("container");
     container.appendChild( renderer.domElement );
 
     sceneback = new THREE.Scene();
@@ -110,6 +112,8 @@ function initListener() {
     container.addEventListener( 'mousedown', onMouseDown, false );
     container.addEventListener( 'mousemove', onMouseMove, false );
     container.addEventListener( 'mouseup', onMouseUp, false );
+    container.style.display="block";
+    loop();
 }
 
 function onMouseDown(e) {
@@ -156,7 +160,7 @@ function resize() {
     view.mid_w = view.w * 0.5;
     view.mid_h = ( 100 + view.h ) * 0.5;
     view.aspect = view.w / view.h;
-    view.pixelRatio = ( view.h / view.deep ).toFixed(2);
+    view.pixelRatio = ( view.h / view.deep );
 
     renderer.setSize( view.w, view.h );
     camera.aspect = view.aspect;

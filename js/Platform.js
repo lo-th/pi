@@ -1,6 +1,7 @@
 /**
 * Nano platform prototype
 * @author LoTh / http://3dflashlo.wordpress.com/
+* @author base 2d version PurpleFloyd 
 */
 
 var PLATFORM = { REVISION: '0.1' };
@@ -47,7 +48,7 @@ PLATFORM.Game = function( scene, sceneback, showInfo, showScore ){
     this.banking=0;
 
     this.zoneGeo = new THREE.PlaneGeometry( 1, 1 );
-    this.zoneMat = new THREE.MeshBasicMaterial( { color: 0x111111, side: THREE.BackSide } );
+    this.zoneMat = new THREE.MeshBasicMaterial( { color: 0x101316, side: THREE.BackSide } );
     this.oldy =0;
     this.zone = null;
 
@@ -101,12 +102,12 @@ PLATFORM.Game.prototype = {
     },
     resize:function( x, y, f ){
         PLATFORM.FACTOR = f;
-        PLATFORM.ZONE_X =  Math.floor((x / PLATFORM.FACTOR)-(40/ PLATFORM.FACTOR));
-        PLATFORM.ZONE_Y =  Math.floor((y / PLATFORM.FACTOR)-(40/ PLATFORM.FACTOR));
-        PLATFORM.ZONE_MID_X = Math.floor(PLATFORM.ZONE_X * 0.5);
-        PLATFORM.ZONE_MID_Y =  Math.floor(PLATFORM.ZONE_Y * 0.5);
-        this.zone.scale.x = (PLATFORM.ZONE_X)//+(40/ SHOOTER.FACTOR);
-        this.zone.scale.y = (PLATFORM.ZONE_Y)//+(40/ SHOOTER.FACTOR);
+        PLATFORM.ZONE_X =  Math.round((x / PLATFORM.FACTOR)-(40/ PLATFORM.FACTOR));
+        PLATFORM.ZONE_Y =  Math.round((y / PLATFORM.FACTOR)-(40/ PLATFORM.FACTOR));
+        PLATFORM.ZONE_MID_X = Math.round(PLATFORM.ZONE_X * 0.5);
+        PLATFORM.ZONE_MID_Y =  Math.round(PLATFORM.ZONE_Y * 0.5);
+        this.zone.scale.x = (PLATFORM.ZONE_X)+(40/ SHOOTER.FACTOR);
+        this.zone.scale.y = (PLATFORM.ZONE_Y)+(40/ SHOOTER.FACTOR);
     },
     update:function(){
 
