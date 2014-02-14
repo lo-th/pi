@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>SCRIPT to PNG</title>
+<style>
+body {
+    background-color:#000000;
+    color: #fff;
+    font-size: 100%;
+}
+
+.wrapper { padding: 0 20px; }
+.mega { font-size: 200%; }
+
+textarea {
+  background-color: #202020;
+  border: 0;
+  padding: 10px 10px;
+  color: #fff;
+  resize: none;
+  width: 100%;
+}
+
+.btn {
+  position:absolute;
+  top:10px;
+  left:300px;
+  background-color: #886610;
+  color: #fff;
+  padding: 10px 20px;
+  text-decoration: none;
+}
+
+.row:after {
+    clear: both;
+    content: '';
+    display: block;
+}
+
+.column {
+    float: left;
+    width: 50%;
+}
+
+
+</style>
+
+<div class="row wrapper">
+    <div class="mega"> SCRIPT to PNG </div> <a href="javascript:void(0);" onclick="update()" class="btn">Update</a>
+</div>
+
+<div class="row">
+    <div class="column">
+        <div class="wrapper">Input <textarea name="input" id="input" cols="30" rows="8">
+        Your code here for exemple var OIMO = {}... 
+        and simply save image with red border
+        you can use photoshop to convert 8bit grayscale png
+        </textarea>
+        </div>
+    </div>
+
+    <div class="column">
+        <div class="wrapper">Output <textarea name="output" id="output" cols="30" rows="8" disabled></textarea>
+        </div>
+    </div>
+
+</div>
+<div class="row wrapper">
+<img id="images"></img>
+</div>
+    
+
+<script type="text/javascript">
+
+function update() {
+    createDemo(input.value);
+    output.value = canvas.toDataURL();
+    IM.src = output.value;
+}
+ var oImg
+function createDemo(str) {
+    //var size = Math.ceil(Math.sqrt(str.length / 4));
+   // var size = Math.ceil(Math.sqrt(str.length / 3));
+    var size = Math.ceil(Math.sqrt(str.length / 1));
+    canvas.height = size;
+    canvas.width = size;
+    var image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    var img = image.data; 
+
+   // color + alpha
+    /*for(i = 0; i < image.data.length; i++) {
+        img[i] = str.charCodeAt(i) || 0;
+        if()
+    }*/
+  var n = 0
+  // color test 
+  /* for(i = 0; i < image.data.length; i+=4) {
+        img[i+0] = str.charCodeAt((i+0)-n);
+        img[i+1] = str.charCodeAt((i+1)-n);
+        img[i+2] = str.charCodeAt((i+2)-n);
+        img[i+3] = 255;
+        n++
+    }*/
+    for(i = 0; i < image.data.length; i+=4) {
+        img[i+0] = str.charCodeAt((i+0)-n);
+        img[i+1] = str.charCodeAt((i+0)-n);
+        img[i+2] = str.charCodeAt((i+0)-n);
+        img[i+3] = 255;
+        n+=3;
+    }
+    image.data = img;
+    ctx.putImageData(image, 0, 0);
+}
+
+
+var IM = document.getElementById('images');
+IM.style.border = "10px solid #883300";
+var canvas = document.createElement("canvas");
+var ctx = canvas.getContext('2d');
+
+var input = document.getElementById('input');
+var output = document.getElementById('output');
+
+update();
+</script>
