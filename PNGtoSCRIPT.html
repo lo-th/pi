@@ -14,6 +14,7 @@ body {
 </head>
 
 <body>
+<!--<script type="text/javascript" src="js/Oimo.three.min.js"></script>-->
 <script type="text/javascript">
 
 var canvas = document.getElementById('myCanvas');
@@ -46,6 +47,7 @@ var pushCode = function (r){
 	test();
 }
 
+//test()
 var camera, scene, renderer;
 var mesh;
 
@@ -91,7 +93,7 @@ function test() {
 	//var geometry = new THREE.CubeGeometry( 200, 200, 200 );
 	var geometry = new THREE.SphereGeometry( 100, 60, 50 );
 
-	var mapHeight = THREE.ImageUtils.loadTexture( 'img/oimo_three.png' );
+	var mapHeight = THREE.ImageUtils.loadTexture( 'img/oimo_three2.png' );
 	//mapHeight.anisotropy = 4;
 	mapHeight.repeat.set( 0.998, 0.998 );
 	mapHeight.offset.set( 0.001, 0.001 );
