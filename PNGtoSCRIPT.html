@@ -104,8 +104,7 @@ img.onload = function() {
 	//for(var i = 0, l=d.length; i < l; i+=4) {if(d[i]>0) r += String.fromCharCode(d[i]); }
 	for(var i = 0, l=d.length; i < l; i+=4) {
 		pix = d[i];
-		if(pix===128) {r+= ";";}
-		else if(pix>31 && pix<128 ) {r += String.fromCharCode(pix);}
+		if(pix>31 && pix<128 ) {r += String.fromCharCode(pix);}
 	}
 	//for(var i = 0, l=d.length; i < l; i+=4) {if(d[i]!==255) r.push(String.fromCharCode(d[i])); }
 
