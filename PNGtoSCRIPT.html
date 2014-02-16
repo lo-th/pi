@@ -9,60 +9,155 @@ body {
     color: #fff;
     margin: 0px;
     overflow: hidden;
+    font-family: monospace;
+}
+textarea {
+  background-color: #404040;
+  border: 0;
+  padding: 10px 10px;
+  color: #fff;
+  resize: none;
+  width: 100%;
+  font-size: 10px;
+}
+#output{
+	padding: 10px 10px;
+	position:absolute;
+	width:100%;
+	height:200px;
+	top:20px;
+	left:0px;
+}
+#container{
+	position:absolute;
+	padding:0;
+	height:100%;
+	width: 100%;
+	top:0;
+	left:0;
+	overflow: hidden;
+}
+#time{
+	position:absolute;
+	top:5px;
+	height:20px;
+	left:5px;
+	width: 300px;
 }
 </style>
 </head>
 
 <body>
+<div id="container"></div>
+<!--<textarea name="output" id="output" cols="30" rows="8"></textarea>-->
+<div id="time"></div>
 <!--<script type="text/javascript" src="js/Oimo.three.min.js"></script>-->
 <script type="text/javascript">
+/*
+var xhr = new XMLHttpRequest();
+xhr.open("GET", "http://4.bp.blogspot.com/_Afm6-TcZ7Ho/S67FnPJD0_I/AAAAAAAAC6I/giTT8ePty5E/s1600/bunny.jpg", true);
+xhr.responseType = "blob";
+xhr.onreadystatechange = function () {
+  if (this.readyState == this.DONE) {
+    var blob = this.response;
+    var image = document.getElementById("my-image");
+    image.addEventListener("load", function (evt) { URL.revokeObjectURL(evt.target.src); });
+    image.onload = function() {
+    	canvas.getContext('2d').drawImage(image, 30, 15, 130, 110);
+        var imgData=canvas.getContext('2d').getImageData(0,0,200,100);
+        console.log(imgData);
+          can.draw(can.texture(image)).dotScreen(320, 100.5, 0, 3);
+          can.update();
+          
+};
+    image.src = URL.createObjectURL(blob);
+      
+  }
+}
+xhr.send();
+var canvas = document.createElement('canvas');
+//document.body.appendChild(canvas);
+var can = fx.canvas();document.body.appendChild(can);
+can.style.width = "49%";
+can.style.height = "49%";
+can.style.float = "left";
 
+*/
+var head = document.getElementsByTagName('head')[0];
+var time = document.getElementById('time');
+//var output = document.getElementById('output');
 var canvas = document.getElementById('myCanvas');
 var context;
 var imgData;
 
 var img = new Image();
 img.onload = function() {
-	var c=document.createElement("canvas"), r='';
+	var t01 = Date.now();
+	var c=document.createElement("canvas");
+	var r='';
 	var s = this.width;
 	c.width = c.height = s;
 	var ctx = c.getContext('2d');
 	ctx.drawImage(this, 0, 0);
 	var d = ctx.getImageData(0, 0, s, s).data;
-	for(var i = 0, l=d.length; i < l; i+=4) {if(d[i]>0) r += String.fromCharCode(d[i]); }
+	var pix;
+	//for(var i = 0, l=d.length; i < l; i+=4) {if(d[i]>0) r += String.fromCharCode(d[i]); }
+	for(var i = 0, l=d.length; i < l; i+=4) {
+		pix = d[i];
+		if(pix===128) {r+= ";";}
+		else if(pix>31 && pix<128 ) {r += String.fromCharCode(pix);}
+	}
+	//for(var i = 0, l=d.length; i < l; i+=4) {if(d[i]!==255) r.push(String.fromCharCode(d[i])); }
 
-	pushCode(r);
-};
-img.src = "img/oimo_three.png";
+	//r.join("");
 
-var pushCode = function (r){
-	var head = document.getElementsByTagName('head')[0];
+	/*for(var i = 0, l=d.length; i < l; i+=4) {
+		if(d[i]>0)r += String.fromCharCode(d[i]);
+		if(d[i+1]>0)r += String.fromCharCode(d[i+1]);
+		if(d[i+2]>0)r += String.fromCharCode(d[i+2]);
+			 
+		
+	}*/
+
+
+    //output.value = c.toDataURL();
+
 	nscript = document.createElement("script");
 	nscript.type = "text/javascript";
 	nscript.name = "topScript";
 	nscript.id = "topScript";
 	nscript.charset = "utf-8";
+	nscript.async = true;
 	nscript.text = r;
 	head.appendChild(nscript);
+
+	var t02 = Date.now()-t01;
+	time.innerHTML = "decode time: " + t02 + " ms";
+
 	test();
-}
+};
+//img.src = "img/oimo_three.png";
+img.src = "img/oimo_three.png";
+
 
 //test()
-var camera, scene, renderer;
+var camera, scene, renderer, container;
 var mesh;
 
 function test() {
 	renderer = new THREE.WebGLRenderer({ antialias: false });
 	renderer.setSize( window.innerWidth, window.innerHeight );
-	document.body.appendChild( renderer.domElement );
 	renderer.gammaInput = true;
 	renderer.gammaOutput = true;
 	renderer.setClearColor( 0x202020, 1 );
 
+	container = document.getElementById('container');
+	container.appendChild( renderer.domElement );
+
 	//
 
 	camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 1000 );
-	camera.position.z = 400;
+	camera.position.z = 200;
 
 	scene = new THREE.Scene();
 
@@ -93,7 +188,7 @@ function test() {
 	//var geometry = new THREE.CubeGeometry( 200, 200, 200 );
 	var geometry = new THREE.SphereGeometry( 100, 60, 50 );
 
-	var mapHeight = THREE.ImageUtils.loadTexture( 'img/oimo_three2.png' );
+	var mapHeight = THREE.ImageUtils.loadTexture( 'img/oimo_three.png' );
 	//mapHeight.anisotropy = 4;
 	mapHeight.repeat.set( 0.998, 0.998 );
 	mapHeight.offset.set( 0.001, 0.001 );

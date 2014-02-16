@@ -80,8 +80,8 @@ function update() {
  var oImg
 function createDemo(str) {
     //var size = Math.ceil(Math.sqrt(str.length / 4));
-   // var size = Math.ceil(Math.sqrt(str.length / 3));
-    var size = Math.ceil(Math.sqrt(str.length / 1));
+    //var size = Math.ceil(Math.sqrt(str.length / 3));
+    var size = 1024;//Math.ceil(Math.sqrt(str.length / 1));
     canvas.height = size;
     canvas.width = size;
     var image = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -94,7 +94,7 @@ function createDemo(str) {
     }*/
   var n = 0
   // color test 
-  /* for(i = 0; i < image.data.length; i+=4) {
+    /*for(i = 0; i < image.data.length; i+=4) {
         img[i+0] = str.charCodeAt((i+0)-n);
         img[i+1] = str.charCodeAt((i+1)-n);
         img[i+2] = str.charCodeAt((i+2)-n);
