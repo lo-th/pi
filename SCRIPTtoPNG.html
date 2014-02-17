@@ -6,12 +6,8 @@
 body {
     background-color:#000000;
     color: #fff;
-    font-size: 100%;
+    font-family: monospace;
 }
-
-.wrapper { padding: 0 20px; }
-.mega { font-size: 200%; }
-
 textarea {
   background-color: #202020;
   border: 0;
@@ -20,88 +16,76 @@ textarea {
   resize: none;
   width: 100%;
 }
+input{ margin:10px; padding:10px; }
 
-.btn {
-  position:absolute;
-  top:10px;
-  left:300px;
-  background-color: #886610;
-  color: #fff;
-  padding: 10px 20px;
-  text-decoration: none;
-}
+#interface{ position: absolute; left:0; top:0; width:100%; height:260px; }
+#title{ position: absolute; left:10px; top:20px; width:300px; height:30px; font-size: 200%;}
+#imageSizeX{ position: absolute; left:300px; top:10px; width: 50px;}
+#imageSizeY{ position: absolute; left:400px; top:10px; width: 50px;}
+#but01{ position: absolute; left:500px; top:10px;  }
+#but02{ position: absolute; left:600px; top:10px; }
+#but03{ position: absolute; left:710px; top:10px; }
+#xtxt{ position: absolute; left:300px; top:30px; margin-left:-8px; width: 20px; }
+#ytxt{ position: absolute; left:400px; top:30px; margin-left:-8px; width: 20px; }
 
-.row:after {
-    clear: both;
-    content: '';
-    display: block;
-}
+#inputtxt{ position: absolute; left:10px; top:60px; width:calc(50% - 40px); height:20px; }
+#outputtxt{ position: absolute; right:10px; top:60px; width:calc(50% - 40px); height:20px; }
+#input{ position: absolute; left:10px; top:80px; width:calc(50% - 40px); height:180px; }
+#output{ position: absolute; right:10px; top:80px; width:calc(50% - 40px); height:180px; }
+#images{ position: absolute; left:10px; top:290px; border:3px solid red;}
 
-.column {
-    float: left;
-    width: 50%;
-}
 
 
 </style>
-
-<div class="row wrapper">
-    <div class="mega"> SCRIPT to PNG </div> <a href="javascript:void(0);" onclick="update()" class="btn">Update</a>
-</div>
-
-<div class="row">
-    <div class="column">
-        <div class="wrapper">Input <textarea name="input" id="input" cols="30" rows="8">
+<div id='interface'>
+    <div id="title"> SCRIPT to PNG </div>
+    <div id="xtxt">X</div> <input type="number" name="quantity" min="32" max="2048" value="1024"  id='imageSizeX'>
+    <div id="ytxt">Y</div> <input type="number" name="quantity" min="32" max="2048" value="1024"  id='imageSizeY'>
+    <input type="submit" onClick=update(0) value="Update Fixe" id="but01">
+    <input type="submit" onClick=update(1) value="Update Fixe X" id="but02">
+    <input type="submit" onClick=update(2) value="Update AutoSize" id="but03">
+    <div id="inputtxt">Input</div><textarea name="input" id="input">
         Your code here for exemple var OIMO = {}... 
         and simply save image with red border
         you can use photoshop to convert 8bit grayscale png
+        Ascii character range need for javascript is from 32 to 127
         </textarea>
-        </div>
-    </div>
-
-    <div class="column">
-        <div class="wrapper">Output <textarea name="output" id="output" cols="30" rows="8" disabled></textarea>
-        </div>
-    </div>
-
+    <div id="outputtxt">Output</div><textarea name="output" id="output" disabled></textarea>
 </div>
-<div class="row wrapper">
+
 <img id="images"></img>
-</div>
     
 
 <script type="text/javascript">
+var size = [1024, 1024];
 
-function update() {
-    createDemo(input.value);
+function update(n) {
+  var str = input.value;
+  if(str.charAt(str.length - 1)!==";")str+=";";
+
+
+  if(n===0){ size = [document.getElementById('imageSizeX').value, document.getElementById('imageSizeY').value]; }
+  else if(n===1){ 
+    var s = Math.ceil(str.length/document.getElementById('imageSizeX').value);
+    size = [document.getElementById('imageSizeX').value, s]; }
+  else {
+    var s = Math.ceil(Math.sqrt(str.length));
+    size = [s, s];
+  }
+
+    createDemo(str);
     output.value = canvas.toDataURL();
     IM.src = output.value;
 }
- var oImg
-function createDemo(str) {
-    //var size = Math.ceil(Math.sqrt(str.length / 4));
-    //var size = Math.ceil(Math.sqrt(str.length / 3));
-    var size = 1024;//Math.ceil(Math.sqrt(str.length / 1));
-    canvas.height = size;
-    canvas.width = size;
-    var image = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    var img = image.data; 
 
-   // color + alpha
-    /*for(i = 0; i < image.data.length; i++) {
-        img[i] = str.charCodeAt(i) || 0;
-        if()
-    }*/
+function createDemo(str) {
+  canvas.width = size[0];
+  canvas.height = size[1];
+  var image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  var img = image.data; 
+
   var n = 0
-  // color test 
-    /*for(i = 0; i < image.data.length; i+=4) {
-        img[i+0] = str.charCodeAt((i+0)-n);
-        img[i+1] = str.charCodeAt((i+1)-n);
-        img[i+2] = str.charCodeAt((i+2)-n);
-        img[i+3] = 255;
-        n++
-    }*/
-    for(i = 0; i < image.data.length; i+=4) {
+    for(i = 0, l= image.data.length; i < l; i+=4) {
         img[i+0] = str.charCodeAt((i+0)-n);
         img[i+1] = str.charCodeAt((i+0)-n);
         img[i+2] = str.charCodeAt((i+0)-n);
@@ -114,12 +98,11 @@ function createDemo(str) {
 
 
 var IM = document.getElementById('images');
-IM.style.border = "10px solid #883300";
 var canvas = document.createElement("canvas");
 var ctx = canvas.getContext('2d');
 
 var input = document.getElementById('input');
 var output = document.getElementById('output');
 
-update();
+update(2);
 </script>
