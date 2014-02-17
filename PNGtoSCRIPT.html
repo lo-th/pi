@@ -93,6 +93,8 @@ function sourceLoaded() {
 	renderer.gammaInput = true;
 	renderer.gammaOutput = true;
 	renderer.setClearColor( 0x202020, 1 );
+	renderer.shadowMapEnabled = true;
+	renderer.shadowMapCullFace = THREE.CullFaceBack;
 
 	container = document.getElementById('container');
 	container.appendChild( renderer.domElement );
@@ -105,26 +107,45 @@ function sourceLoaded() {
 
 	scene = new THREE.Scene();
 
-	var ambientLight = new THREE.AmbientLight( 0x202020 );
+	var ambientLight = new THREE.AmbientLight( 0x101020 );
 	scene.add( ambientLight );
 
-	var pointLight = new THREE.PointLight( 0xffffff, 1.5, 1000 );
+	var pointLight = new THREE.PointLight( 0xff55ff, 1.5, 1000 );
 	pointLight.color.setHSL( 0.05, 1, 0.95 );
 	pointLight.position.set( 0, 0, 600 );
 	scene.add( pointLight );
 
-	var spotLight = new THREE.SpotLight( 0xffffff, 1.5 );
-	spotLight.position.set( 0.05, 0.05, 1 );
-	spotLight.color.setHSL( 0.6, 1, 0.95 );
+	var spotLight = new THREE.SpotLight( 0xff8000, 1.5 );
+	//spotLight.position.set( 0.05, 0.05, 1 );
+	spotLight.position.copy( Orbit(center,-90,45, 400));
+	//spotLight.color.setHSL( 0.6, 1, 0.95 );
 	scene.add( spotLight );
 
-	var directionalLight = new THREE.DirectionalLight( 0xffffff, 1.5 );
+
+	var directionalLight = new THREE.DirectionalLight( 0xffff90, 1.5 );
 	directionalLight.position.set( 1, -0.5, 1 );
 	directionalLight.color.setHSL( 0.6, 1, 0.95 );
 	scene.add( directionalLight );
-	directionalLight.position.multiplyScalar( 500 );
+	directionalLight.position.multiplyScalar( 300 );
 
-	var directionalLight2 = new THREE.DirectionalLight( 0xffffff, 1.2 );
+	directionalLight.castShadow = true;
+	//directionalLight.shadowCameraVisible = true;
+
+	directionalLight.shadowMapWidth = 2048;
+	directionalLight.shadowMapHeight = 2048;
+
+	directionalLight.shadowCameraNear = 200;
+	directionalLight.shadowCameraFar = 600;
+
+	directionalLight.shadowCameraLeft = -300;
+	directionalLight.shadowCameraRight = 300;
+	directionalLight.shadowCameraTop = 300;
+	directionalLight.shadowCameraBottom = -300;
+
+	directionalLight.shadowBias = -0.005;
+	directionalLight.shadowDarkness = 0.5;
+
+	var directionalLight2 = new THREE.DirectionalLight( 0x8080ff, 1.2 );
 	directionalLight2.position.set( 1, -0.5, -1 );
 	directionalLight2.color.setHSL( 0.08, 1, 0.825 );
 	scene.add( directionalLight2 );
@@ -141,6 +162,8 @@ function sourceLoaded() {
 
 	earth = new THREE.Mesh( geometry, material );
 	scene.add( earth );
+	earth.castShadow = true;
+	earth.receiveShadow = true;
 
 	content = new THREE.Object3D();
 	scene.add( content );
@@ -201,6 +224,9 @@ var initSimulation = function(){
 		bodys[i] = new OIMO.Body({type:'sphere', size:[1], pos:[x,y,z], move:true, world:world});
 		oimoMeshs[i] = new THREE.Mesh( geo, mat );
 		contentOimo.add(oimoMeshs[i]);
+		oimoMeshs[i].castShadow = true;
+	    oimoMeshs[i].receiveShadow = true;
+
 	}
 
 }
@@ -220,8 +246,7 @@ var updateSimulation = function(){
         	x = m[12];
         	y = m[13];
         	z = m[14];
-        	mesh.position.copy(latLongToVector3( x, z, 100, y) )
-
+        	mesh.position.copy(latLongToVector3( x, z, 100, y) );
         }
     }
 }
@@ -233,19 +258,26 @@ var updateSimulation = function(){
 var populateSea3D = function (){
 	var geo = THREE.BufferGeometryUtils.fromGeometry(getSeaGeometry('Item000'));
 	var geo2 = THREE.BufferGeometryUtils.fromGeometry(getSeaGeometry('Item007'));
-	var mat1 = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0xff4040, specular: 0x505050, shininess: 60 });
-	var mat2 = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0xffff40, specular: 0x505050, shininess: 60 });
-    var mat3 = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0xff40ff, specular: 0x505050, shininess: 60, skinning: true });
+	var mat1 = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0x606060, specular: 0x505050, shininess: 60 });
+	var mat2 = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0x606060, specular: 0x505050, shininess: 60 });
+    var mat3 = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0x606060, specular: 0x505050, shininess: 60, skinning: true });
 
-	var hero = getMeshByName("monster_4_b5");
-	hero.material = mat3;
+	//var hero = getSeaGeometry('monster_4_b5');//
+	
+	var h = getMeshByName("monster_4_b5");
+//h.scale.set(0.2,0.2,-0.2);
+	//console.log(h.animations[0].data.name)
+	//THREE.AnimationHandler.add( h.animations[0].data );
+
+	var hero = h.geometry;
+	//hero.material = mat3;
 
 	var i, rx, rz, m;
 	for(i=0; i<100; i++){
 		rx =  (Math.random()*360);
 		rz =  (Math.random()*360);
 		m = new THREE.Mesh(geo,  mat1);
-		m.scale.set(0.2,0.2,0.2);
+		m.scale.set(0.4,0.4,0.4);
 		m.rotation.z = -rx * ToRad;
 		m.rotation.y = -rz * ToRad;
 
@@ -257,7 +289,7 @@ var populateSea3D = function (){
 		rx =  (Math.random()*360);
 		rz =  (Math.random()*360);
 		m = new THREE.Mesh(geo2,  mat2);
-		m.scale.set(0.2,0.2,0.2);
+		m.scale.set(0.4,0.4,0.4);
 		m.rotation.z = -rx * ToRad;
 		m.rotation.y = -rz * ToRad;
 
@@ -265,14 +297,20 @@ var populateSea3D = function (){
 		m.castShadow = m.receiveShadow = true;
 		content.add(m);
 	}
-	for(i=0; i<1; i++){
-		m = hero;
+	for(i=0; i<50; i++){
+		rx =  (Math.random()*360);
+		rz =  (Math.random()*360);
+		//m = hero;
+		m = new THREE.SkinnedMesh( hero, mat3, false );
 		m.scale.set(0.4,0.4,-0.4);
 		m.rotation.z = -rx * ToRad;
 		m.rotation.y = -rz * ToRad;
 
 		m.position.copy( Orbit(center,rz,rx, 110));
 		m.castShadow = m.receiveShadow = true;
+
+		var animation = new THREE.Animation( m, "monster_4_b5/root" );
+		animation.play( 0.05 * Math.random() );
 		content.add(m);
 	}
 }
