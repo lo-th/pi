@@ -11,23 +11,6 @@ body {
     overflow: hidden;
     font-family: monospace;
 }
-textarea {
-  background-color: #404040;
-  border: 0;
-  padding: 10px 10px;
-  color: #fff;
-  resize: none;
-  width: 100%;
-  font-size: 10px;
-}
-#output{
-	padding: 10px 10px;
-	position:absolute;
-	width:100%;
-	height:200px;
-	top:20px;
-	left:0px;
-}
 #container{
 	position:absolute;
 	padding:0;
@@ -37,89 +20,39 @@ textarea {
 	left:0;
 	overflow: hidden;
 }
-#time{
+#info{
+	pointer-events:none;
 	position:absolute;
 	top:5px;
-	height:20px;
 	left:5px;
-	width: 300px;
+	height:500px;
+	width:300px;
 }
 </style>
+
+
+
 </head>
 
 <body>
 <div id="container"></div>
-<!--<textarea name="output" id="output" cols="30" rows="8"></textarea>-->
-<div id="time"></div>
-<!--<script type="text/javascript" src="js/Oimo.three.min.js"></script>-->
+<div id="info"></div>
 <script type="text/javascript">
-/*
-var xhr = new XMLHttpRequest();
-xhr.open("GET", "http://4.bp.blogspot.com/_Afm6-TcZ7Ho/S67FnPJD0_I/AAAAAAAAC6I/giTT8ePty5E/s1600/bunny.jpg", true);
-xhr.responseType = "blob";
-xhr.onreadystatechange = function () {
-  if (this.readyState == this.DONE) {
-    var blob = this.response;
-    var image = document.getElementById("my-image");
-    image.addEventListener("load", function (evt) { URL.revokeObjectURL(evt.target.src); });
-    image.onload = function() {
-    	canvas.getContext('2d').drawImage(image, 30, 15, 130, 110);
-        var imgData=canvas.getContext('2d').getImageData(0,0,200,100);
-        console.log(imgData);
-          can.draw(can.texture(image)).dotScreen(320, 100.5, 0, 3);
-          can.update();
-          
-};
-    image.src = URL.createObjectURL(blob);
-      
-  }
-}
-xhr.send();
-var canvas = document.createElement('canvas');
-//document.body.appendChild(canvas);
-var can = fx.canvas();document.body.appendChild(can);
-can.style.width = "49%";
-can.style.height = "49%";
-can.style.float = "left";
 
-*/
 var head = document.getElementsByTagName('head')[0];
-var time = document.getElementById('time');
-//var output = document.getElementById('output');
-var canvas = document.getElementById('myCanvas');
-var context;
-var imgData;
+var info = document.getElementById('info');
 
 var img = new Image();
 img.onload = function() {
 	var t01 = Date.now();
-	var c=document.createElement("canvas");
-	var r='';
-	var s = this.width;
-	c.width = c.height = s;
-	var ctx = c.getContext('2d');
-	ctx.drawImage(this, 0, 0);
-	var d = ctx.getImageData(0, 0, s, s).data;
-	var pix;
-	//for(var i = 0, l=d.length; i < l; i+=4) {if(d[i]>0) r += String.fromCharCode(d[i]); }
-	for(var i = 0, l=d.length; i < l; i+=4) {
+	var c=document.createElement("canvas"), r='', pix;
+	c.width = c.height = this.width;
+	c.getContext('2d').drawImage(this, 0, 0);
+	var d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+	for (var i = 0, l=d.length; i<l; i+=4){
 		pix = d[i];
-		if(pix>31 && pix<128 ) {r += String.fromCharCode(pix);}
+		if(pix>31 && pix<128 ) r+=String.fromCharCode(pix);
 	}
-	//for(var i = 0, l=d.length; i < l; i+=4) {if(d[i]!==255) r.push(String.fromCharCode(d[i])); }
-
-	//r.join("");
-
-	/*for(var i = 0, l=d.length; i < l; i+=4) {
-		if(d[i]>0)r += String.fromCharCode(d[i]);
-		if(d[i+1]>0)r += String.fromCharCode(d[i+1]);
-		if(d[i+2]>0)r += String.fromCharCode(d[i+2]);
-			 
-		
-	}*/
-
-
-    //output.value = c.toDataURL();
 
 	nscript = document.createElement("script");
 	nscript.type = "text/javascript";
@@ -130,20 +63,31 @@ img.onload = function() {
 	nscript.text = r;
 	head.appendChild(nscript);
 
-	var t02 = Date.now()-t01;
-	time.innerHTML = "decode time: " + t02 + " ms";
+	info.innerHTML = "decode time: " + (Date.now()-t01) + " ms<br>";
 
-	test();
+	sourceLoaded();
 };
-//img.src = "img/oimo_three.png";
 img.src = "img/oimo_three.png";
 
+//___________________________________________________________
 
-//test()
-var camera, scene, renderer, container;
-var mesh;
 
-function test() {
+
+// navigation var 
+var camPos = { horizontal: 90, vertical: 75, distance: 1000, automove: false };
+var mouse = { ox:0, oy:0, h:0, v:0, mx:0, my:0, down:false, over:false, moving:true };
+var ToRad = Math.PI / 180;
+var ToDeg = 180 / Math.PI;
+// three var
+var camera, scene, renderer, container, center, earth, clock, content;
+var meshs = [];
+
+//oimo var
+var world, bodys = [], oimoMeshs = [], contentOimo;
+
+function sourceLoaded() {
+	clock = new THREE.Clock();
+
 	renderer = new THREE.WebGLRenderer({ antialias: false });
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.gammaInput = true;
@@ -155,8 +99,9 @@ function test() {
 
 	//
 
-	camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 1000 );
-	camera.position.z = 200;
+	camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 10000 );
+    center = new THREE.Vector3(0,0,0);
+    moveCamera();
 
 	scene = new THREE.Scene();
 
@@ -184,45 +129,274 @@ function test() {
 	directionalLight2.color.setHSL( 0.08, 1, 0.825 );
 	scene.add( directionalLight2 );
 
-	//var geometry = new THREE.CubeGeometry( 200, 200, 200 );
-	var geometry = new THREE.SphereGeometry( 100, 60, 50 );
+	var geometry = THREE.BufferGeometryUtils.fromGeometry( new THREE.SphereGeometry( 100, 60, 50 ));
 
 	var mapHeight = THREE.ImageUtils.loadTexture( 'img/oimo_three.png' );
-	//mapHeight.anisotropy = 4;
+	mapHeight.anisotropy = renderer.getMaxAnisotropy();
 	mapHeight.repeat.set( 0.998, 0.998 );
 	mapHeight.offset.set( 0.001, 0.001 );
 	mapHeight.format = THREE.RGBFormat;
-	mapHeight.anisotropy = renderer.getMaxAnisotropy();
 
-	var material = new THREE.MeshPhongMaterial( { bumpMap: mapHeight, bumpScale: 19, metal: true,  ambient: 0x202020, color: 0x404040, specular: 0x505050, shininess: 60 } );
+	var material = new THREE.MeshPhongMaterial( { bumpMap: mapHeight, bumpScale: 10, metal: true,  ambient: 0x202020, color: 0x404040, specular: 0x505050, shininess: 60 } );
 
-	mesh = new THREE.Mesh( geometry, material );
-	scene.add( mesh );
+	earth = new THREE.Mesh( geometry, material );
+	scene.add( earth );
+
+	content = new THREE.Object3D();
+	scene.add( content );
+
+	contentOimo = new THREE.Object3D();
+	scene.add( contentOimo );
+
+	// oimo init
+    initSimulation();
 
 	//
 
 	window.addEventListener( 'resize', onWindowResize, false );
+	container.addEventListener( 'mousemove', onMouseMove, false );
+    container.addEventListener( 'mousedown', onMouseDown, false );
+    container.addEventListener( 'mouseout', onMouseUp, false );
+    container.addEventListener( 'mouseup', onMouseUp, false );
+    container.addEventListener( 'mousewheel', onMouseWheel, false );
+    container.addEventListener( 'DOMMouseScroll', onMouseWheel, false ); // firefox
 	animate();
 
+	autoMove( 0, 60, 200);
+	loadSea3DModel();
 }
 
 function onWindowResize() {
-
 	camera.aspect = window.innerWidth / window.innerHeight;
 	camera.updateProjectionMatrix();
 	renderer.setSize( window.innerWidth, window.innerHeight );
-
 }
 
 function animate() {
-
 	requestAnimationFrame( animate );
+	delta = clock.getDelta();
+	
+	updateSimulation();
 
-	mesh.rotation.x += 0.005;
-	mesh.rotation.y += 0.01;
-
+	THREE.AnimationHandler.update( delta );
 	renderer.render( scene, camera );
+}
 
+// OIMO 
+
+var initSimulation = function(){
+	world = new OIMO.World();
+	var ground = new OIMO.Body({size:[10000, 40, 10000], pos:[0,-20,0], world:world});
+
+	var geo = THREE.BufferGeometryUtils.fromGeometry( new THREE.SphereGeometry( 1, 20, 20 ));
+	var mat = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0x40ff40, specular: 0x505050, shininess: 60 });
+
+    var x, y, z;
+	for(var i=0; i<100; i++){
+		x = -100 + Math.random()*200;
+        z = -100 + Math.random()*200;
+        x = -10 + Math.random()*10;
+        z = -10 + Math.random()*10;
+        y = 600;
+		bodys[i] = new OIMO.Body({type:'sphere', size:[1], pos:[x,y,z], move:true, world:world});
+		oimoMeshs[i] = new THREE.Mesh( geo, mat );
+		contentOimo.add(oimoMeshs[i]);
+	}
+
+}
+
+var updateSimulation = function(){
+	world.step();
+	var mtx = new THREE.Matrix4();
+    var i = bodys.length;
+    var m, mesh, py, px, len, x, y, z;
+
+    while (i--){
+    	m = bodys[i].body.getMatrix()
+        mesh = oimoMeshs[i];
+        if(m[15]===0){
+        	mtx.fromArray(m);
+        	mesh.rotation.setFromRotationMatrix( mtx );
+        	x = m[12];
+        	y = m[13];
+        	z = m[14];
+        	mesh.position.copy(latLongToVector3( x, z, 100, y) )
+
+        }
+    }
+}
+
+ 
+
+// SEA3D
+
+var populateSea3D = function (){
+	var geo = THREE.BufferGeometryUtils.fromGeometry(getSeaGeometry('Item000'));
+	var geo2 = THREE.BufferGeometryUtils.fromGeometry(getSeaGeometry('Item007'));
+	var mat1 = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0xff4040, specular: 0x505050, shininess: 60 });
+	var mat2 = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0xffff40, specular: 0x505050, shininess: 60 });
+    var mat3 = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0xff40ff, specular: 0x505050, shininess: 60, skinning: true });
+
+	var hero = getMeshByName("monster_4_b5");
+	hero.material = mat3;
+
+	var i, rx, rz, m;
+	for(i=0; i<100; i++){
+		rx =  (Math.random()*360);
+		rz =  (Math.random()*360);
+		m = new THREE.Mesh(geo,  mat1);
+		m.scale.set(0.2,0.2,0.2);
+		m.rotation.z = -rx * ToRad;
+		m.rotation.y = -rz * ToRad;
+
+		m.position.copy( Orbit(center,rz,rx, 100));
+		m.castShadow = m.receiveShadow = true;
+		content.add(m);
+	}
+	for(i=0; i<100; i++){
+		rx =  (Math.random()*360);
+		rz =  (Math.random()*360);
+		m = new THREE.Mesh(geo2,  mat2);
+		m.scale.set(0.2,0.2,0.2);
+		m.rotation.z = -rx * ToRad;
+		m.rotation.y = -rz * ToRad;
+
+		m.position.copy( Orbit(center,rz,rx, 100));
+		m.castShadow = m.receiveShadow = true;
+		content.add(m);
+	}
+	for(i=0; i<1; i++){
+		m = hero;
+		m.scale.set(0.4,0.4,-0.4);
+		m.rotation.z = -rx * ToRad;
+		m.rotation.y = -rz * ToRad;
+
+		m.position.copy( Orbit(center,rz,rx, 110));
+		m.castShadow = m.receiveShadow = true;
+		content.add(m);
+	}
+}
+
+var loadSea3DModel = function (){
+	var SeaLoader = new THREE.SEA3D(true);
+	SeaLoader.onComplete = function( e ) {
+		for (var i=0; i !== SeaLoader.meshes.length; i++){
+			meshs.push( SeaLoader.meshes[i] );
+			//info.innerHTML += SeaLoader.meshes[i].name+"<br>";
+		}
+		populateSea3D();
+	}
+	SeaLoader.load( 'model/g.sea' );
+}
+
+var getSeaGeometry = function (name, scale, axe, child, deep){
+	var c = child || 0;
+	var d = deep || 0;
+	var a = axe || "z";
+	var s = scale || 1;
+	var m; 
+	if(c === 0 && d === 0) m = getMeshByName(name).geometry;
+	else if(c >= 1 && d === 0) m = getMeshByName(name).children[c-1].geometry;
+	else if(c >= 1 && d === 1) m = getMeshByName(name).children[0].children[c-1].geometry;
+	else if(c >= 1 && d === 2) m = getMeshByName(name).children[0].children[0].children[c-1].geometry;
+	scaleGeometry(m, s, a);
+	return m;
+}
+
+var getMeshByName = function (name){
+	for (var i=0; i !== meshs.length; i++){
+		if(meshs[i].name === name){
+			return meshs[i];
+		} 
+	} 
+}
+
+var scaleGeometry = function (geometry, scale, Axe) {
+	var s = 1;
+	var axe = Axe || 'z' 
+	for( var i = 0; i < geometry.vertices.length; i++) {
+		var vertex	= geometry.vertices[i];
+		if(axe==='x')vertex.x *= -s;
+		else vertex.x *= s;
+		if(axe==='y')vertex.y *= -s;
+		else vertex.y *= s;
+		if(axe==='z')vertex.z *= -s;
+		else vertex.z *= s;
+	}
+	geometry.computeFaceNormals();
+	geometry.computeCentroids();
+	geometry.computeVertexNormals();
+	geometry.verticesNeedUpdate = true;
+}
+
+// MATH
+
+var Orbit = function (origine, horizontal, vertical, distance) {
+    var p = new THREE.Vector3();
+    var phi = vertical*ToRad;
+    var theta = horizontal*ToRad;
+    p.x = (distance * Math.sin(phi) * Math.cos(theta)) + origine.x;
+    p.z = (distance * Math.sin(phi) * Math.sin(theta)) + origine.z;
+    p.y = (distance * Math.cos(phi)) + origine.y;
+    return p;
+}
+
+function latLongToVector3(lat, lon, radius, heigth) {
+	var p = new THREE.Vector3();
+    var phi = (lat)*ToRad;
+    var theta = (lon)*ToRad;
+    p.x = (radius+heigth) * Math.cos(phi) * Math.cos(theta);
+    p.y = (radius+heigth) * Math.sin(phi) * Math.cos(theta);
+    p.z = (radius+heigth) * Math.sin(theta);
+    /*
+    p.x = -(radius+heigth) * Math.cos(phi) * Math.cos(theta);
+    p.y = (radius+heigth) * Math.sin(phi);
+    p.z = (radius+heigth) * Math.cos(phi) * Math.sin(theta);*/
+    return p;
+}
+
+// MOUSE & NAVIGATION
+
+var autoMove = function (h, v, d) {
+	TweenLite.to(camPos, 3, {horizontal: h, vertical: v, distance: d, onUpdate: moveCamera });
+}
+
+var moveCamera = function () {
+    camera.position.copy(Orbit(center, camPos.horizontal, camPos.vertical, camPos.distance));
+    camera.lookAt(center);
+}
+
+var onMouseDown = function (e) {
+    e.preventDefault();
+    mouse.ox = e.clientX;
+    mouse.oy = e.clientY;
+    mouse.h = camPos.horizontal;
+    mouse.v = camPos.vertical;
+    mouse.down = true;
+}
+
+var onMouseUp = function (e) {
+    mouse.down = false;
+    document.body.style.cursor = 'auto';
+}
+
+var onMouseMove = function (e) {
+    e.preventDefault();
+    if (mouse.down ) {
+        document.body.style.cursor = 'move';
+        camPos.horizontal = ((e.clientX - mouse.ox) * 0.3) + mouse.h;
+        camPos.vertical = (-(e.clientY - mouse.oy) * 0.3) + mouse.v;
+        moveCamera();
+    }
+}
+
+var onMouseWheel = function (e) {
+    var delta = 0;
+    if(e.wheelDeltaY){delta=e.wheelDeltaY*0.01;}
+    else if(e.wheelDelta){delta=e.wheelDelta*0.05;}
+    else if(e.detail){delta=-e.detail*1.0;}
+    camPos.distance-=(delta*10);
+    moveCamera();   
 }
 
 </script>

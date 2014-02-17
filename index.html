@@ -20,8 +20,8 @@
     *{ box-sizing:border-box; -webkit-box-sizing:border-box; -moz-box-sizing:border-box;
         user-select:none; -moz-user-select:none; -webkit-user-select:none; }
 </style>
-!
-<script src="js/three.min.js"></script>
+<script src="js/SourceLoader.js"></script>
+
 <script src="js/Shooter.js"></script>
 <script src="js/Platform.js"></script>
 
@@ -49,10 +49,9 @@ var view = { w:10, h:10, mid_w:5, mid_h:5, aspect:1, deep:0, pixelRatio:1 };
 var mouse = { x:0, y:0 }
 var Game;
 
-init();
-loop();
 
-function init() {
+
+function sourceLoaded() {
     container = document.getElementById("container");
     container.style.display="none";
 
@@ -79,6 +78,8 @@ function init() {
 
     window.addEventListener( 'resize', resize, false );
     resize();
+
+    loop();
 }
 
 function startPlatform() {
