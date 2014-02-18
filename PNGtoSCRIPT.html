@@ -41,33 +41,68 @@ body {
 
 var head = document.getElementsByTagName('head')[0];
 var info = document.getElementById('info');
+var scripts = [];
 
 var img = new Image();
 img.onload = function() {
 	var t01 = Date.now();
-	var c=document.createElement("canvas"), r='', pix;
+	var c=document.createElement("canvas"), r='', pix, i;
 	c.width = c.height = this.width;
 	c.getContext('2d').drawImage(this, 0, 0);
 	var d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
-	for (var i = 0, l=d.length; i<l; i+=4){
+	var newScript = false;
+	var ns = 0;
+	var src = [];
+
+	for ( i = 0, l=d.length; i<l; i+=4){
 		pix = d[i];
-		if(pix>31 && pix<128 ) r+=String.fromCharCode(pix);
+		if(pix === 128) newScript = true;
+		if( pix>31 && pix<128 ){ 
+			if(newScript){ ns++; newScript = false; src[ns] ="";}
+            src[ns] += String.fromCharCode(pix);
+		}
+	}
+	
+	//console.log(ns, src);
+	var name, nn, pn, tmpsrc;
+
+	for( i = 0; i<ns; i++){
+		tmpsrc = src[i+1];
+		src[i+1] = "";
+		nn = tmpsrc.indexOf("var");
+		pn = tmpsrc.indexOf("=");
+		name = tmpsrc.substring(nn+4,pn);
+		if(name === "={fromGeometry:function(n,t){var ") name = "TOOLS";
+		if(name === "e") name = "TWEENLITE";
+		console.log(name);
+		scripts[i] = document.createElement("script");
+		scripts[i].type = "text/javascript";
+		scripts[i].name = name;
+		scripts[i].id = name;
+		scripts[i].charset = "utf-8";
+		scripts[i].async = true;
+		scripts[i].text = tmpsrc;
+
+		head.appendChild(scripts[i])
 	}
 
-	nscript = document.createElement("script");
+	tmpsrc = "";
+	src = null;
+
+	/*nscript = document.createElement("script");
 	nscript.type = "text/javascript";
 	nscript.name = "topScript";
 	nscript.id = "topScript";
 	nscript.charset = "utf-8";
 	nscript.async = true;
 	nscript.text = r;
-	head.appendChild(nscript);
+	head.appendChild(nscript);*/
 
 	info.innerHTML = "decode time: " + (Date.now()-t01) + " ms<br>";
 
 	sourceLoaded();
 };
-img.src = "img/oimo_three.png";
+img.src = "img/full.png";
 
 //___________________________________________________________
 
@@ -94,7 +129,7 @@ function sourceLoaded() {
 	renderer.gammaOutput = true;
 	renderer.setClearColor( 0x202020, 1 );
 	renderer.shadowMapEnabled = true;
-	renderer.shadowMapCullFace = THREE.CullFaceBack;
+	//renderer.shadowMapCullFace = THREE.CullFaceBack;
 
 	container = document.getElementById('container');
 	container.appendChild( renderer.domElement );
@@ -107,32 +142,29 @@ function sourceLoaded() {
 
 	scene = new THREE.Scene();
 
-	var ambientLight = new THREE.AmbientLight( 0x101020 );
+	var ambientLight = new THREE.AmbientLight( 0x201020 );
 	scene.add( ambientLight );
 
-	var pointLight = new THREE.PointLight( 0xff55ff, 1.5, 1000 );
-	pointLight.color.setHSL( 0.05, 1, 0.95 );
-	pointLight.position.set( 0, 0, 600 );
+	var pointLight = new THREE.PointLight( 0x5555ff, 1.5, 500 );
+	pointLight.position.copy( Orbit(center,-120,45, 200));
 	scene.add( pointLight );
 
-	var spotLight = new THREE.SpotLight( 0xff8000, 1.5 );
-	//spotLight.position.set( 0.05, 0.05, 1 );
-	spotLight.position.copy( Orbit(center,-90,45, 400));
-	//spotLight.color.setHSL( 0.6, 1, 0.95 );
+	var spotLight = new THREE.SpotLight( 0xff5555, 1.5 );
+	spotLight.position.copy( Orbit(center,90,-45, 300));
 	scene.add( spotLight );
 
 
-	var directionalLight = new THREE.DirectionalLight( 0xffff90, 1.5 );
+	var directionalLight = new THREE.DirectionalLight( 0xffffee, 1.5 );
 	directionalLight.position.set( 1, -0.5, 1 );
-	directionalLight.color.setHSL( 0.6, 1, 0.95 );
+	//directionalLight.color.setHSL( 0.6, 1, 0.95 );
 	scene.add( directionalLight );
 	directionalLight.position.multiplyScalar( 300 );
 
 	directionalLight.castShadow = true;
 	//directionalLight.shadowCameraVisible = true;
 
-	directionalLight.shadowMapWidth = 2048;
-	directionalLight.shadowMapHeight = 2048;
+	directionalLight.shadowMapWidth = 1024;
+	directionalLight.shadowMapHeight = 1024;
 
 	directionalLight.shadowCameraNear = 200;
 	directionalLight.shadowCameraFar = 600;
@@ -145,20 +177,15 @@ function sourceLoaded() {
 	directionalLight.shadowBias = -0.005;
 	directionalLight.shadowDarkness = 0.5;
 
-	var directionalLight2 = new THREE.DirectionalLight( 0x8080ff, 1.2 );
-	directionalLight2.position.set( 1, -0.5, -1 );
-	directionalLight2.color.setHSL( 0.08, 1, 0.825 );
-	scene.add( directionalLight2 );
-
 	var geometry = THREE.BufferGeometryUtils.fromGeometry( new THREE.SphereGeometry( 100, 60, 50 ));
 
-	var mapHeight = THREE.ImageUtils.loadTexture( 'img/oimo_three.png' );
+	var mapHeight = THREE.ImageUtils.loadTexture( img.src );
 	mapHeight.anisotropy = renderer.getMaxAnisotropy();
 	mapHeight.repeat.set( 0.998, 0.998 );
 	mapHeight.offset.set( 0.001, 0.001 );
 	mapHeight.format = THREE.RGBFormat;
 
-	var material = new THREE.MeshPhongMaterial( { bumpMap: mapHeight, bumpScale: 10, metal: true,  ambient: 0x202020, color: 0x404040, specular: 0x505050, shininess: 60 } );
+	var material = new THREE.MeshPhongMaterial( { map: mapHeight, bumpMap: mapHeight, bumpScale: 10, metal: true,  ambient: 0x202020, color: 0x909090, specular: 0x505050, shininess: 60 } );
 
 	earth = new THREE.Mesh( geometry, material );
 	scene.add( earth );
@@ -173,6 +200,9 @@ function sourceLoaded() {
 
 	// oimo init
     initSimulation();
+
+    // particule init
+    //initParticles();
 
 	//
 
@@ -201,6 +231,8 @@ function animate() {
 	
 	updateSimulation();
 
+	updateParticules(delta);
+
 	THREE.AnimationHandler.update( delta );
 	renderer.render( scene, camera );
 }
@@ -211,8 +243,8 @@ var initSimulation = function(){
 	world = new OIMO.World();
 	var ground = new OIMO.Body({size:[10000, 40, 10000], pos:[0,-20,0], world:world});
 
-	var geo = THREE.BufferGeometryUtils.fromGeometry( new THREE.SphereGeometry( 1, 20, 20 ));
-	var mat = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0x40ff40, specular: 0x505050, shininess: 60 });
+	var geo = THREE.BufferGeometryUtils.fromGeometry( new THREE.SphereGeometry( 2, 20, 20 ));
+	var mat = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0x202020, specular: 0x808080, shininess: 60 });
 
     var x, y, z;
 	for(var i=0; i<100; i++){
@@ -221,7 +253,7 @@ var initSimulation = function(){
         x = -10 + Math.random()*10;
         z = -10 + Math.random()*10;
         y = 600;
-		bodys[i] = new OIMO.Body({type:'sphere', size:[1], pos:[x,y,z], move:true, world:world});
+		bodys[i] = new OIMO.Body({type:'sphere', size:[2], pos:[x,y,z], move:true, world:world});
 		oimoMeshs[i] = new THREE.Mesh( geo, mat );
 		contentOimo.add(oimoMeshs[i]);
 		oimoMeshs[i].castShadow = true;
@@ -365,6 +397,43 @@ var scaleGeometry = function (geometry, scale, Axe) {
 	geometry.computeCentroids();
 	geometry.computeVertexNormals();
 	geometry.verticesNeedUpdate = true;
+}
+
+// PARTICULES
+var particleGroup;
+
+function initParticles() {
+	particleGroup = new SPE.Group({
+		texture: THREE.ImageUtils.loadTexture('img/smokeparticle.png'),
+		maxAge: 2
+	});
+
+	var emitter = new SPE.Emitter({
+		position: new THREE.Vector3(0, 100, 0),
+        positionSpread: new THREE.Vector3( 0, 0, 0 ),
+
+		acceleration: new THREE.Vector3(0, -10, 0),
+		accelerationSpread: new THREE.Vector3( 10, 0, 10 ),
+
+		velocity: new THREE.Vector3(0, 10, 0),
+		velocitySpread: new THREE.Vector3(60, 30, 60),
+
+		colorStart: new THREE.Color('white'),
+		colorEnd: new THREE.Color('black'),
+
+		sizeStart: 10,
+		sizeEnd: 30,
+
+		particleCount: 100
+	});
+
+	particleGroup.addEmitter( emitter );
+	scene.add( particleGroup.mesh );
+
+}
+
+var updateParticules = function(delta){
+	if(particleGroup) particleGroup.tick( delta );
 }
 
 // MATH
