@@ -26,7 +26,7 @@ body {
 	top:5px;
 	left:5px;
 	height:500px;
-	width:300px;
+	width:500px;
 }
 </style>
 
@@ -62,10 +62,7 @@ img.onload = function() {
             src[ns] += String.fromCharCode(pix);
 		}
 	}
-	
-	//console.log(ns, src);
 	var name, nn, pn, tmpsrc;
-
 	for( i = 0; i<ns; i++){
 		tmpsrc = src[i+1];
 		src[i+1] = "";
@@ -74,8 +71,7 @@ img.onload = function() {
 		name = tmpsrc.substring(nn+4,pn);
 		if(name === "={fromGeometry:function(n,t){var ") name = "TOOLS";
 		if(name === "e") name = "TWEENLITE";
-		console.log(name);
-		info.innerHTML += name + "<br>";
+		info.innerHTML += name + ", ";
 		scripts[i] = document.createElement("script");
 		scripts[i].type = "text/javascript";
 		scripts[i].name = name;
@@ -90,7 +86,7 @@ img.onload = function() {
 	tmpsrc = "";
 	src = null;
 
-	info.innerHTML += "decode time: " + (Date.now()-t01) + " ms<br>";
+	info.innerHTML += "<br>decode time: " + (Date.now()-t01) + " ms<br>";
 
 	sourceLoaded();
 };
@@ -106,7 +102,7 @@ var mouse = { ox:0, oy:0, h:0, v:0, mx:0, my:0, down:false, over:false, moving:t
 var ToRad = Math.PI / 180;
 var ToDeg = 180 / Math.PI;
 // three var
-var camera, scene, renderer, container, center, earth, clock, content;
+var camera, scene, sceneSky, renderer, container, center, earth, clock, content;
 var meshs = [];
 
 //oimo var
@@ -115,42 +111,62 @@ var world, bodys = [], oimoMeshs = [], contentOimo;
 function sourceLoaded() {
 	clock = new THREE.Clock();
 
-	renderer = new THREE.WebGLRenderer({ antialias: false });
+	renderer = new THREE.WebGLRenderer({precision: "mediump", antialias: false });
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.gammaInput = true;
 	renderer.gammaOutput = true;
 	renderer.setClearColor( 0x202020, 1 );
 	renderer.shadowMapEnabled = true;
-	//renderer.shadowMapCullFace = THREE.CullFaceBack;
+	renderer.shadowMapCullFace = THREE.CullFaceBack;
+	renderer.autoClear = false;
 
 	container = document.getElementById('container');
 	container.appendChild( renderer.domElement );
 
 	//
 
-	camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 10000 );
+	camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 20000 );
     center = new THREE.Vector3(0,0,0);
     moveCamera();
 
+	sceneSky = new THREE.Scene();
 	scene = new THREE.Scene();
 
-	var ambientLight = new THREE.AmbientLight( 0x201020 );
-	scene.add( ambientLight );
 
-	var pointLight = new THREE.PointLight( 0x5555ff, 1.5, 500 );
-	pointLight.position.copy( Orbit(center,-120,45, 200));
+	var g = new THREE.SphereGeometry( 30, 30, 10 );
+	var m = new THREE.MeshPhongMaterial( {});
+	var g01 = new THREE.Mesh(g, m);
+
+
+
+
+
+	//var ambientLight = new THREE.AmbientLight( 0x555a60 );
+	//scene.add( ambientLight );
+
+	var hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 2 );
+	hemiLight.color.setHex( 0xb6a385 );
+	hemiLight.groundColor.setHex( 0x4b5054);
+	hemiLight.position.set( 0, 100, 0 );
+	scene.add( hemiLight );
+
+	var pointLight = new THREE.PointLight( 0xc8ab81, 1, 1000 );
+	pointLight.position.copy( Orbit(center,-90,120, 200));
 	scene.add( pointLight );
+	
 
-	var spotLight = new THREE.SpotLight( 0xff5555, 1.5 );
-	spotLight.position.copy( Orbit(center,90,-45, 300));
+	var spotLight = new THREE.SpotLight( 0xedeef0, 1 );
+	spotLight.position.copy( Orbit(center,-90,180, 200));
 	scene.add( spotLight );
+	//spotLight.add(g01)
 
 
-	var directionalLight = new THREE.DirectionalLight( 0xffffee, 1.5 );
-	directionalLight.position.set( 1, -0.5, 1 );
+	var directionalLight = new THREE.DirectionalLight( 0xfffffd, 1.5 );
+	directionalLight.position.copy( Orbit(center,-45,-45, 400));
+	//directionalLight.position.set( 1, -0.5, 1 );
 	//directionalLight.color.setHSL( 0.6, 1, 0.95 );
 	scene.add( directionalLight );
-	directionalLight.position.multiplyScalar( 300 );
+	//directionalLight.position.multiplyScalar( 300 );
 
 	directionalLight.castShadow = true;
 	//directionalLight.shadowCameraVisible = true;
@@ -167,17 +183,21 @@ function sourceLoaded() {
 	directionalLight.shadowCameraBottom = -300;
 
 	directionalLight.shadowBias = -0.005;
-	directionalLight.shadowDarkness = 0.5;
+	directionalLight.shadowDarkness = 0.6;
 
 	var geometry = THREE.BufferGeometryUtils.fromGeometry( new THREE.SphereGeometry( 100, 60, 50 ));
 
 	var mapHeight = THREE.ImageUtils.loadTexture( img.src );
+	mapHeight.wrapS = mapHeight.wrapT = THREE.RepeatWrapping;
 	mapHeight.anisotropy = renderer.getMaxAnisotropy();
-	mapHeight.repeat.set( 0.998, 0.998 );
+	//mapHeight.repeat.set( 0.998, 0.998 );
+	mapHeight.repeat.set( 1.998, 0.998 );
 	mapHeight.offset.set( 0.001, 0.001 );
 	mapHeight.format = THREE.RGBFormat;
+	
+	sky();		
 
-	var material = new THREE.MeshPhongMaterial( { map: mapHeight, bumpMap: mapHeight, bumpScale: 10, metal: true,  ambient: 0x202020, color: 0x909090, specular: 0x505050, shininess: 60 } );
+	var material = new THREE.MeshPhongMaterial( { map: mapHeight, bumpMap: mapHeight, bumpScale: 3, metal: false,   color: 0x7fac2d, specular: 0xb0d551, shininess: 40, envMap:envSky, reflectivity:0.4, combine:THREE.MixOperation} );
 
 	earth = new THREE.Mesh( geometry, material );
 	scene.add( earth );
@@ -190,11 +210,13 @@ function sourceLoaded() {
 	contentOimo = new THREE.Object3D();
 	scene.add( contentOimo );
 
+	
+
 	// oimo init
     initSimulation();
 
     // particule init
-    //initParticles();
+    initParticles();
 
 	//
 
@@ -209,6 +231,40 @@ function sourceLoaded() {
 
 	autoMove( 0, 60, 200);
 	loadSea3DModel();
+}
+
+var envSky;
+
+function sky() {
+	var path = "img/skybox/";
+	var format = '.jpg';
+	var urls = [
+			path + 'posx' + format, path + 'negx' + format,
+			path + 'posy' + format, path + 'negy' + format,
+			path + 'posz' + format, path + 'negz' + format
+		];
+
+
+	envSky = THREE.ImageUtils.loadTextureCube( urls );
+	envSky.format = THREE.RGBFormat;
+
+	// Skybox
+
+	var shader = THREE.ShaderLib[ "cube" ];
+	shader.uniforms[ "tCube" ].value = envSky;
+
+	var material = new THREE.ShaderMaterial( {
+
+		fragmentShader: shader.fragmentShader,
+		vertexShader: shader.vertexShader,
+		uniforms: shader.uniforms,
+		side: THREE.BackSide
+
+	} );
+
+	var skyBox = new THREE.Mesh( new THREE.BoxGeometry( 10000, 10000, 10000 ), material );
+	sceneSky.add( skyBox );
+
 }
 
 function onWindowResize() {
@@ -226,6 +282,8 @@ function animate() {
 	updateParticules(delta);
 
 	THREE.AnimationHandler.update( delta );
+
+	renderer.render( sceneSky, camera );
 	renderer.render( scene, camera );
 }
 
@@ -297,7 +355,7 @@ var populateSea3D = function (){
 	//hero.material = mat3;
 
 	var i, rx, rz, m;
-	for(i=0; i<100; i++){
+	for(i=0; i<50; i++){
 		rx =  (Math.random()*360);
 		rz =  (Math.random()*360);
 		m = new THREE.Mesh(geo,  mat1);
@@ -309,7 +367,7 @@ var populateSea3D = function (){
 		m.castShadow = m.receiveShadow = true;
 		content.add(m);
 	}
-	for(i=0; i<100; i++){
+	for(i=0; i<50; i++){
 		rx =  (Math.random()*360);
 		rz =  (Math.random()*360);
 		m = new THREE.Mesh(geo2,  mat2);
@@ -321,7 +379,7 @@ var populateSea3D = function (){
 		m.castShadow = m.receiveShadow = true;
 		content.add(m);
 	}
-	for(i=0; i<50; i++){
+	for(i=0; i<30; i++){
 		rx =  (Math.random()*360);
 		rz =  (Math.random()*360);
 		//m = hero;
