@@ -75,6 +75,7 @@ img.onload = function() {
 		if(name === "={fromGeometry:function(n,t){var ") name = "TOOLS";
 		if(name === "e") name = "TWEENLITE";
 		console.log(name);
+		info.innerHTML += name + "<br>";
 		scripts[i] = document.createElement("script");
 		scripts[i].type = "text/javascript";
 		scripts[i].name = name;
@@ -89,16 +90,7 @@ img.onload = function() {
 	tmpsrc = "";
 	src = null;
 
-	/*nscript = document.createElement("script");
-	nscript.type = "text/javascript";
-	nscript.name = "topScript";
-	nscript.id = "topScript";
-	nscript.charset = "utf-8";
-	nscript.async = true;
-	nscript.text = r;
-	head.appendChild(nscript);*/
-
-	info.innerHTML = "decode time: " + (Date.now()-t01) + " ms<br>";
+	info.innerHTML += "decode time: " + (Date.now()-t01) + " ms<br>";
 
 	sourceLoaded();
 };
