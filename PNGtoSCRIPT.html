@@ -37,6 +37,7 @@ body {
 </head>
 
 <body>
+<audio id="sound"></audio>
 <div id="container"></div>
 <canvas id="3dcanvas"></canvas>
 <div id="info"></div>
@@ -391,13 +392,37 @@ var updateRvo = function(){
 var initHowler = function(){
 	//var sound = new Howl({ src: 'http://50.7.96.138:8536/stream/;', autoplay: true, loop: true,  volume: 0.5 }).play();
 //sound.play();
-	var audio = new Audio();
+//var Octx = null;
+   // usingWebAudio = true,
+   // noAudio = false;
+ /* if (typeof AudioContext !== 'undefined') {
+    Octx = new AudioContext();
+    info.innerHTML += "<br>"+Octx;
+  } else if (typeof webkitAudioContext !== 'undefined') {
+    Octx = new webkitAudioContext();
+    info.innerHTML += "<br>"+Octx;
+    }*/
+
+	//var audio = new Audio();
+	var audio = document.getElementById('sound');
+	//audio.volume=0.2;
+	//audio.crossOrigin = "anonymous";
 	audio.src = "http://50.7.96.138:8536/stream"+"/;";
+
+	
 	audio.play();
 
-	audio.oncanplay = function(){
+	/*try {
+          audio.load();
+        } catch (e) {
+        	info.innerHTML += "<br>"+e;
+          //xhr.onerror();
+        }*/
+    audio.oncanplay = function(){
   	    info.innerHTML += "<br>Sound Launch";
     }
+
+	
 
  /* audio.onloadedmetadata = function(e){
   	info.innerHTML += "<br>Metadata";
