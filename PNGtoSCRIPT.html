@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <title>PNG to SCRIPT</title>
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=11" />
 <meta charset="utf-8">
 <style>
 body {
@@ -81,7 +83,7 @@ img.onload = function() {
 		scripts[i].async = true;
 		scripts[i].text = tmpsrc;
 
-		head.appendChild(scripts[i]);
+		if(name!=="HOWLER")head.appendChild(scripts[i]);
 	}
 
 	tmpsrc = "";
@@ -229,6 +231,8 @@ function sourceLoaded() {
 
     loadSea3DModel();
 
+    initHowler();
+
 	//
 	resize() 
 
@@ -348,9 +352,6 @@ var initRvo = function(){
     RvoTarget = new RVO.Vector2( 0, 0 );
 
     setInterval(updateRvo, 1000/60);
-
-
-    
 }
 
 var setTargetRvo = function(x, y){
@@ -377,13 +378,32 @@ var updateRvo = function(){
         }
         simulator.setAgentPrefVelocity(i, goalVector);
 
-        // rvoMeshs[i].position.x = p.x;
-        // rvoMeshs[i].position.z = p.y;
         rvoMeshs[i].position.copy(latLongToVector3( p.x, p.y, 100, 0.5) );
         rvoMeshs[i].rotation.y = r * ToRad;
 	}
+}
 
+//--------------------------------
+// HOWLER TEST
+//--------------------------------
 
+var initHowler = function(){
+	//var sound = new Howl({ urls: ['http://81.88.37.2:8010/;'], autoplay: true, loop: true,  volume: 0.5 }).play();
+//sound.play();
+	var audio = new Audio();
+	audio.src = "http://173.193.195.162:2800/;";
+	audio.play();
+
+	audio.oncanplay = function(){
+  	info.innerHTML += "<br>Sound Launch";
+  }
+
+ /* audio.onloadedmetadata = function(e){
+  	info.innerHTML += "<br>Metadata";
+  	info.innerHTML += "<br>net: "  + audio.networkState;
+  	info.innerHTML += "<br>buffered: "  + audio.buffered;
+  	info.innerHTML += "<br>audioTracks: "  + audio.audioTracks;
+  }*/
 }
 
 //--------------------------------
