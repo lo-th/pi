@@ -221,6 +221,9 @@ function sourceLoaded() {
 	// oimo init
     initOimo();
 
+    // Rvo init
+    initRvo();
+
     // particule init
     //initParticles();
 
@@ -313,18 +316,73 @@ function animate() {
 // RVO SIMULATOR 
 //--------------------------------
 
-var simulator;
+var simulator, nAgent, contentRvo, rvoMeshs = [], goals = [], RvoTarget;
 
 var initRvo = function(){
+	contentRvo= new THREE.Object3D();
+	scene.add( contentRvo );
+
 	simulator = new RVO.Simulator();
-	simulator.setTimeStep(1.75);
-    simulator.setAgentDefaults(125/4, 50/4, 100/4, 0, 8, 0.2);
+	simulator.setTimeStep(1);
+    simulator.setAgentDefaults(125/4, 50/4, 100/4, 0, 1, 0.2);
+
+    var geo = THREE.BufferGeometryUtils.fromGeometry( new THREE.SphereGeometry( 1, 10, 10 ));
+	var mat = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0xFF2020, specular: 0x808080, shininess: 60 });
+
+    var v, c=0, n = 20;
+
+    for (var i = 0; i < n; i++) {
+    	v = new RVO.Vector2(Math.cos(i * 2 * Math.PI / n), Math.sin(i * 2 * Math.PI / n));
+    	simulator.addAgent(v.mul_k(100));
+        simulator.setAgentMaxSpeed(c, .5 + Math.random() * 1);
+
+        rvoMeshs[i] = new THREE.Mesh( geo, mat );
+		contentRvo.add(rvoMeshs[i]);
+		rvoMeshs[i].castShadow = true;
+	    rvoMeshs[i].receiveShadow = true;
+
+        c++;
+    }
+
+    nAgent = simulator.getNumAgents();
+    RvoTarget = new RVO.Vector2( 0, 0 );
 
     setInterval(updateRvo, 1000/60);
+
+
     
 }
 
+var setTargetRvo = function(x, y){
+	if(RvoTarget){
+		RvoTarget.x = x;
+		RvoTarget.y = y;
+	}
+}
+
 var updateRvo = function(){
+	var i = nAgent;
+	var p, r;
+
+	simulator.doStep();
+
+	while(i--){
+		goals[i] = RvoTarget;
+		p = simulator.getAgentPosition(i);
+        r = simulator.getAgentOrientation(i);
+
+        goalVector = goals[i].moins( p );
+        if ( goalVector.length() > 1) {
+            goalVector = goalVector.normalize();
+        }
+        simulator.setAgentPrefVelocity(i, goalVector);
+
+        // rvoMeshs[i].position.x = p.x;
+        // rvoMeshs[i].position.z = p.y;
+        rvoMeshs[i].position.copy(latLongToVector3( p.x, p.y, 100, 0.5) );
+        rvoMeshs[i].rotation.y = r * ToRad;
+	}
+
 
 }
 
@@ -344,8 +402,9 @@ var initOimo = function(){
 
 	var geo = THREE.BufferGeometryUtils.fromGeometry( new THREE.SphereGeometry( 1, 10, 10 ));
 	var mat = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0x202020, specular: 0x808080, shininess: 60 });
-	var mm = new THREE.Mesh( geo, mat );
+
     var x, y, z;
+
 	for(var i=0; i<100; i++){
 		x = -100 + Math.random()*200;
         z = -100 + Math.random()*200;
@@ -357,7 +416,6 @@ var initOimo = function(){
 		contentOimo.add(oimoMeshs[i]);
 		oimoMeshs[i].castShadow = true;
 	    oimoMeshs[i].receiveShadow = true;
-
 	}
 
 	setInterval(updateOimo, 1000/60);
@@ -623,6 +681,7 @@ var onMouseDown = function (e) {
     mouse.h = camPos.horizontal;
     mouse.v = camPos.vertical;
     mouse.down = true;
+    setTargetRvo( mouse.ox,  mouse.oy)
 }
 
 var onMouseUp = function (e) {
