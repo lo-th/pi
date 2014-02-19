@@ -83,7 +83,8 @@ img.onload = function() {
 		scripts[i].async = true;
 		scripts[i].text = tmpsrc;
 
-		if(name!=="HOWLER")head.appendChild(scripts[i]);
+		//if(name!=="HOWLER") 
+			head.appendChild(scripts[i]);
 	}
 
 	tmpsrc = "";
@@ -388,15 +389,15 @@ var updateRvo = function(){
 //--------------------------------
 
 var initHowler = function(){
-	//var sound = new Howl({ urls: ['http://81.88.37.2:8010/;'], autoplay: true, loop: true,  volume: 0.5 }).play();
+	//var sound = new Howl({ src: 'http://50.7.96.138:8536/stream/;', autoplay: true, loop: true,  volume: 0.5 }).play();
 //sound.play();
 	var audio = new Audio();
-	audio.src = "http://173.193.195.162:2800/;";
+	audio.src = "http://50.7.96.138:8536/stream"+"/;";
 	audio.play();
 
 	audio.oncanplay = function(){
-  	info.innerHTML += "<br>Sound Launch";
-  }
+  	    info.innerHTML += "<br>Sound Launch";
+    }
 
  /* audio.onloadedmetadata = function(e){
   	info.innerHTML += "<br>Metadata";
