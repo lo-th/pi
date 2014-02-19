@@ -108,8 +108,7 @@ var ToDeg = 180 / Math.PI;
 var camera, scene, sceneSky, renderer, container, center, earth, clock, content, envSky;
 var meshs = [];
 
-//oimo var
-var world = null, bodys = [], oimoMeshs = [], contentOimo;
+
 
 
 
@@ -220,7 +219,7 @@ function sourceLoaded() {
 	
 
 	// oimo init
-    initSimulation();
+    initOimo();
 
     // particule init
     //initParticles();
@@ -311,10 +310,31 @@ function animate() {
 }
 
 //--------------------------------
+// RVO SIMULATOR 
+//--------------------------------
+
+var simulator;
+
+var initRvo = function(){
+	simulator = new RVO.Simulator();
+	simulator.setTimeStep(1.75);
+    simulator.setAgentDefaults(125/4, 50/4, 100/4, 0, 8, 0.2);
+
+    setInterval(updateRvo, 1000/60);
+    
+}
+
+var updateRvo = function(){
+
+}
+
+//--------------------------------
 // OIMO PHYSICS 
 //--------------------------------
 
-var initSimulation = function(){
+var world = null, bodys = [], oimoMeshs = [], contentOimo;
+
+var initOimo = function(){
 	
 	contentOimo = new THREE.Object3D();
 	scene.add( contentOimo );
@@ -340,11 +360,11 @@ var initSimulation = function(){
 
 	}
 
-	setInterval(updateSimulation, 60/1000);
+	setInterval(updateOimo, 1000/60);
 
 }
 
-var updateSimulation = function(){
+var updateOimo = function(){
 	if(world!==null){
 		world.step();
 		var mtx = new THREE.Matrix4();
