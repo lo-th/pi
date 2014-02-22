@@ -102,7 +102,7 @@ var perf = "";
 var body = [];
 
 self.onmessage = function(e) {
-
+    var ToRad = Math.PI / 180;
     var matrixs = e.data.matrixs;
     var rvoVel = e.data.rvoVel;
     var N = e.data.N;
@@ -115,7 +115,7 @@ self.onmessage = function(e) {
         OIMO.WORLD_SCALE = 1;
         OIMO.INV_SCALE = 1;
         world = new OIMO.World(e.data.dt, 2, 8);
-        world.gravity.init(0,-10,0);
+        world.gravity.init(0,-100,0);
         matrixs = e.data.matrixs;
 
         // Ground plane
@@ -173,8 +173,16 @@ self.onmessage = function(e) {
                 body[i].body.linearVelocity.z = e.data.rvoVel[(i*3)+1];
 
                 /*body[i].body.angularVelocity.x = 0;
-                body[i].body.angularVelocity.y = e.data.rvoVel[(i*3)+2];
-                body[i].body.angularVelocity.z = 0;*/
+                body[i].body.angularVelocity.y = e.data.rvoVel[(i*3)+2]*ToRad;
+                body[i].body.angularVelocity.z = 0;
+                body[i].body.angularVelocity.w = 0;*/
+
+                body[i].body.orientation.x = 0;
+                body[i].body.orientation.y = e.data.rvoVel[(i*3)+2]*ToRad;
+                body[i].body.orientation.z = 0;
+                body[i].body.orientation.w = 0;
+
+                //w.orientation.normalize(w.orientation);
             }
             while(j--){
                 matrixs[(16*i) + j] = m[j];
@@ -284,7 +292,7 @@ workerRvo.onmessage = function(e) {
     while(i--){
         rvoMeshes[i].position.x = rvoMatrixs[6*i + 0];
         rvoMeshes[i].position.z = rvoMatrixs[6*i + 1];
-        rvoMeshes[i].rotation.y = rvoMatrixs[6*i + 2];
+        rvoMeshes[i].rotation.y = rvoMatrixs[6*i + 2]*ToRad;
 
         rvoVel[(3*i) + 0 ] = rvoMatrixs[6*i + 3];
         rvoVel[(3*i) + 1 ] = rvoMatrixs[6*i + 4];
