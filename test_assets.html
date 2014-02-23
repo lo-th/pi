@@ -203,7 +203,7 @@ var oimoMeshes=[]
 var rvoMeshes=[];
 
 var fps=0, time, time_prev=0, fpsint = 0;
-var bgcolor = 0x383838;
+var bgcolor = 0x606060;
 var clock;
 
 var meshs = [];
@@ -352,7 +352,7 @@ function init() {
     scene.add( camera );
 
     // lights
-    var hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 2 );
+    var hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 1 );
     hemiLight.color.setHex( 0xb6a385 );
     hemiLight.groundColor.setHex( 0x4b5054);
     hemiLight.position.set( 0, 100, 0 );
@@ -457,10 +457,15 @@ function resize() {
     camera.updateProjectionMatrix();
 }
 
+var nloop = 0;
 function loop() {
     requestAnimationFrame( loop );
     var delta = clock.getDelta();
-    THREE.AnimationHandler.update( delta );
+    nloop++
+    if(nloop===2){
+        nloop = 0;
+        THREE.AnimationHandler.update( delta*2 );
+    }
     renderer.render( scene, camera );
     displayInfo();
 }
@@ -505,10 +510,10 @@ var populateSea3D = function (){
     avatarTexture2.repeat.set( 1, -1 );
     avatarTexture2.offset.set( 1, 1 );
 
-    var mat3 = new THREE.MeshPhongMaterial({ map:avatarTexture, ambient: 0x202020, color: 0x606060, specular: 0x303030, shininess: 30, skinning: true });
-    var mat4 = new THREE.MeshPhongMaterial({ map:avatarTexture2, ambient: 0x202020, color: 0x606060, specular: 0x303030, shininess: 30, skinning: true });
+    var mat3 = new THREE.MeshPhongMaterial({ map:avatarTexture, ambient: 0x202020, specular: 0x303030, shininess: 30, skinning: true });
+    var mat4 = new THREE.MeshPhongMaterial({ map:avatarTexture2, ambient: 0x202020, specular: 0x303030, shininess: 30, skinning: true });
     var mat5 = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0x383838, specular: 0x303030, shininess: 30, skinning: true });
-    var mat6 = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0x202020, specular: 0x303030, shininess: 30 });
+    var mat6 = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0x202020, specular: 0x303030, shininess: 120 });
     
     
     var models = ["hero_1_warrior", "hero_2_valkyrie", "hero_3_wizard", "hero_4_elf", "monster_2_b7"];
@@ -555,10 +560,8 @@ var populateSea3D = function (){
         content.add(m);
     }*/
 
-    var nnn, anim;
-    var num = 100;
-    var rand;
-    var bone;
+    var nnn, anim, rand, bone;
+    var num = 160;
 
     for(i=0; i<num; i++){
         rand = Math.floor(Math.random()*5);
