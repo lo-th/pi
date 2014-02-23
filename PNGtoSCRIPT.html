@@ -163,7 +163,7 @@ function sourceLoaded() {
 	//var ambientLight = new THREE.AmbientLight( 0x555a60 );
 	//scene.add( ambientLight );
 
-	var hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 2 );
+	var hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 1 );
 	hemiLight.color.setHex( 0xb6a385 );
 	hemiLight.groundColor.setHex( 0x4b5054);
 	hemiLight.position.set( 0, 100, 0 );
@@ -215,7 +215,7 @@ function sourceLoaded() {
 	
 	sky();		
 //var material = new THREE.MeshBasicMaterial( { });
-	var material = new THREE.MeshPhongMaterial( { map: mapHeight, bumpMap: mapHeight, bumpScale: 3, metal: false,   color: 0x7fac2d, specular: 0xb0d551, shininess: 40, envMap:envSky, reflectivity:0.4, combine:THREE.MixOperation} );
+	var material = new THREE.MeshPhongMaterial( { bumpMap: mapHeight, bumpScale: 0.5, metal: false,   color: 0xA9C658, specular: 0xAFCB2B, shininess: 40, envMap:envSky, reflectivity:0.85, combine:THREE.MixOperation} );
 
 	earth = new THREE.Mesh( geometry, material );
 	scene.add( earth );
@@ -597,7 +597,7 @@ var populateSea3D = function (){
 
         m.rotation.z = -rx * ToRad;
 		m.rotation.y = -rz * ToRad;
-        if(rand!==4)m.position.copy( Orbit(center,rz,rx, 105));
+        if(rand!==4)m.position.copy( Orbit(center,rz,rx, 105.3));
         else m.position.copy( Orbit(center,rz,rx, 100));
 
         m.castShadow = m.receiveShadow = true;
