@@ -507,14 +507,29 @@ var populateSea3D = function (){
 
     var mat3 = new THREE.MeshPhongMaterial({ map:avatarTexture, ambient: 0x202020, color: 0x606060, specular: 0x303030, shininess: 30, skinning: true });
     var mat4 = new THREE.MeshPhongMaterial({ map:avatarTexture2, ambient: 0x202020, color: 0x606060, specular: 0x303030, shininess: 30, skinning: true });
+    var mat5 = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0x383838, specular: 0x303030, shininess: 30, skinning: true });
+    var mat6 = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0x202020, specular: 0x303030, shininess: 30 });
     
     
-    var h0 = getMeshByName("hero_1_warrior").geometry;
-    var h1 = getMeshByName("hero_2_valkyrie").geometry;
-    var h3 = getMeshByName("hero_3_wizard").geometry;
-    var h4 = getMeshByName("hero_4_elf").geometry;
+    var models = ["hero_1_warrior", "hero_2_valkyrie", "hero_3_wizard", "hero_4_elf", "monster_2_b7"];
+   
+    var materials = [mat3, mat3, mat4, mat4, mat5];
 
-    var i, rx, rz, m;
+    var h0 = getMeshByName(models[0]).geometry;
+    var h1 = getMeshByName(models[1]).geometry;
+    var h2 = getMeshByName(models[2]).geometry;
+    var h3 = getMeshByName(models[3]).geometry;
+    var h4 = getMeshByName(models[4]).geometry;
+
+    var w0 = THREE.BufferGeometryUtils.fromGeometry(getMeshByName("weapon0").geometry);
+    var w1 = THREE.BufferGeometryUtils.fromGeometry(getMeshByName("weapon1").geometry);
+    var w2 = THREE.BufferGeometryUtils.fromGeometry(getMeshByName("weapon2").geometry);
+    var w3 = THREE.BufferGeometryUtils.fromGeometry(getMeshByName("weapon3").geometry);
+
+    var modelsGeo = [h0, h1, h2, h3, h4];
+    var weapons = [w0, w1, w2, w3, null];
+
+    var i, rx, rz, m, w;
     /*for(i=0; i<50; i++){
         rx =  (Math.random()*360);
         rz =  (Math.random()*360);
@@ -539,107 +554,47 @@ var populateSea3D = function (){
         m.castShadow = m.receiveShadow = true;
         content.add(m);
     }*/
+
     var nnn, anim;
-    var num = 40;
+    var num = 100;
+    var rand;
+    var bone;
 
     for(i=0; i<num; i++){
+        rand = Math.floor(Math.random()*5);
         rx =  -50+(Math.random()*100);
         rz =  -50+(Math.random()*100);
-        //m = hero;
-        m = new THREE.SkinnedMesh( h1, mat3, false );
+
+        m = new THREE.SkinnedMesh( modelsGeo[rand], materials[rand], false );
         m.scale.set(0.25,0.25,-0.25);
-        //m.rotation.z = -rx * ToRad;
+
+        if(weapons[rand]!==null){
+            w = new THREE.Mesh( weapons[rand], mat6, false );
+            bone = m.bones[12];
+            w.name = bone.name;
+            w.matrix = bone.skinMatrix;
+            w.matrixAutoUpdate = false;
+            m.add( w );
+        }
+
         m.rotation.y = (Math.random()*360) * ToRad;
 
         m.position.x = -rx;
-        m.position.y = 5.5;
+        if(rand!==4)m.position.y = 5.5;
+        else m.position.y = 1;
         m.position.z = -rz;
 
         //m.position.copy( Orbit(center,rz,rx, 105));
         m.castShadow = m.receiveShadow = true;
         nnn = Math.round(Math.random()*2);
-        if(nnn>0) anim = "hero_2_valkyrie/walk";
-        else anim = "hero_2_valkyrie/idle"
+        if(nnn>0) anim = models[rand]+"/walk";
+        else anim = models[rand]+"/idle"
 
         var animation = new THREE.Animation( m, anim );
         animation.play( 0.05 * Math.random() );
         scene.add(m);
     }
 
-    for(i=0; i<num; i++){
-       // rx =  (Math.random()*360);
-       // rz =  (Math.random()*360);
-
-        rx =  -50+(Math.random()*100);
-        rz =  -50+(Math.random()*100);
-        //m = hero;
-        m = new THREE.SkinnedMesh( h0, mat3, false );
-        m.scale.set(0.25,0.25,-0.25);
-        //m.rotation.z = -rx * ToRad;
-        m.rotation.y = (Math.random()*360) * ToRad;
-
-        m.position.x = -rx;
-        m.position.y = 5.5;
-        m.position.z = -rz;
-
-        //m.position.copy( Orbit(center,rz,rx, 105));
-        m.castShadow = m.receiveShadow = true;
-        nnn = Math.round(Math.random()*2);
-        if(nnn>0) anim = "hero_1_warrior/walk";
-        else anim = "hero_1_warrior/idle"
-
-        var animation = new THREE.Animation( m, anim );
-        animation.play( 0.05 * Math.random() );
-        scene.add(m);
-    }
-
-    for(i=0; i<num; i++){
-        rx =  -50+(Math.random()*100);
-        rz =  -50+(Math.random()*100);
-        //m = hero;
-        m = new THREE.SkinnedMesh( h3, mat4, false );
-        m.scale.set(0.25,0.25,-0.25);
-        //m.rotation.z = -rx * ToRad;
-        m.rotation.y = (Math.random()*360) * ToRad;
-
-        m.position.x = -rx;
-        m.position.y = 5.5;
-        m.position.z = -rz;
-
-        //m.position.copy( Orbit(center,rz,rx, 105));
-        m.castShadow = m.receiveShadow = true;
-        nnn = Math.round(Math.random()*2);
-        if(nnn>0) anim = "hero_3_wizard/walk";
-        else anim = "hero_3_wizard/idle"
-
-        var animation = new THREE.Animation( m, anim );
-        animation.play( 0.05 * Math.random() );
-        scene.add(m);
-    }
-
-    for(i=0; i<num; i++){
-        rx =  -50+(Math.random()*100);
-        rz =  -50+(Math.random()*100);
-        //m = hero;
-        m = new THREE.SkinnedMesh( h4, mat4, false );
-        m.scale.set(0.25,0.25,-0.25);
-        //m.rotation.z = -rx * ToRad;
-        m.rotation.y = (Math.random()*360) * ToRad;
-
-        m.position.x = -rx;
-        m.position.y = 5.5;
-        m.position.z = -rz;
-
-        //m.position.copy( Orbit(center,rz,rx, 105));
-        m.castShadow = m.receiveShadow = true;
-        nnn = Math.round(Math.random()*2);
-        if(nnn>0) anim = "hero_4_elf/walk";
-        else anim = "hero_4_elf/idle"
-
-        var animation = new THREE.Animation( m, anim );
-        animation.play( 0.05 * Math.random() );
-        scene.add(m);
-    }
 }
 
 var loadSea3DModel = function (){
@@ -649,7 +604,7 @@ var loadSea3DModel = function (){
         for (var i=0; i !== SeaLoader.meshes.length; i++){
             m = SeaLoader.meshes[i];
             meshs.push( m );
-            info.innerHTML += m.name+"<br>";
+           // info.innerHTML += m.name+"<br>";
            /* if(m.animations){
                 for (var j=0; j !== m.animations.length; j++){
                     info.innerHTML += "a -"+j+"- "+m.animations[j].name+"<br>"; 
