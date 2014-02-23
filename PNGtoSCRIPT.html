@@ -25,7 +25,7 @@ body {
 #info{
 	pointer-events:none;
 	position:absolute;
-	top:40px;
+	top:5px;
 	left:5px;
 	height:500px;
 	width:500px;
@@ -56,6 +56,7 @@ var scripts = [];
 
 var img = new Image();
 img.onload = function() {
+	var sInfo = "";
 	var t01 = Date.now();
 	var c=document.createElement("canvas"), r='', pix, i;
 	c.width = c.height = this.width;
@@ -82,7 +83,7 @@ img.onload = function() {
 		name = tmpsrc.substring(nn+4,pn);
 		if(name === "={fromGeometry:function(n,t){var ") name = "TOOLS";
 		if(name === "e"){ if(lib===0){ lib++; name = "TWEENLITE";}  else {name = "HOWLER";}}
-		info.innerHTML += name + ", ";
+		sInfo += name + ", ";
 		scripts[i] = document.createElement("script");
 		scripts[i].type = "text/javascript";
 		scripts[i].name = name;
@@ -98,7 +99,7 @@ img.onload = function() {
 	tmpsrc = "";
 	src = null;
 
-	info.innerHTML += "<br>decode time: " + (Date.now()-t01) + " ms<br>";
+	sourceInfo = sInfo+"<br>decode time: " + (Date.now()-t01) + " ms<br>";
 
 	sourceLoaded();
 };
@@ -113,12 +114,13 @@ var ctx;
 var view = {w:window.innerWidth, h:window.innerHeight, f:1};
 var camPos = { horizontal: 90, vertical: 75, distance: 1000, automove: false };
 var mouse = { ox:0, oy:0, h:0, v:0, mx:0, my:0, down:false, over:false, moving:true };
+var fps=0, time, time_prev=0, fpsint = 0;
 var ToRad = Math.PI / 180;
 var ToDeg = 180 / Math.PI;
 // three var
 var camera, scene, sceneSky, renderer, container, center, earth, clock, content, envSky;
 var meshs = [];
-
+var sourceInfo;
 
 
 
@@ -316,6 +318,7 @@ function divResolution(){
 	resize();
 }
 var nloop = 0;
+
 function animate() {
 	requestAnimationFrame( animate );
 
@@ -329,6 +332,24 @@ function animate() {
 
 	renderer.render( sceneSky, camera );
 	renderer.render( scene, camera );
+
+	displayInfo();
+}
+
+function displayInfo(){
+    time = Date.now();
+    if (time - 1000 > time_prev) {
+        time_prev = time; fpsint = fps; fps = 0;
+    } fps++;
+
+    var Tinfo =[
+        "<h3>PNG to SCRIPT</h3>",
+        sourceInfo,
+        //"<br>Oimo Physics: " + oimoInfo +" fps<br>",
+        //"Rvo simulator: " + rvoInfo +" fps<br>",
+        "<br>Three Render: " + fpsint +" fps<br>"
+    ].join("\n");
+    info.innerHTML = Tinfo;
 }
 
 //--------------------------------
@@ -403,46 +424,12 @@ var updateRvo = function(){
 //--------------------------------
 
 var initHowler = function(){
-	//var sound = new Howl({ src: 'http://50.7.96.138:8536/stream/;', autoplay: true, loop: true,  volume: 0.5 }).play();
-//sound.play();
-//var Octx = null;
-   // usingWebAudio = true,
-   // noAudio = false;
- /* if (typeof AudioContext !== 'undefined') {
-    Octx = new AudioContext();
-    info.innerHTML += "<br>"+Octx;
-  } else if (typeof webkitAudioContext !== 'undefined') {
-    Octx = new webkitAudioContext();
-    info.innerHTML += "<br>"+Octx;
-    }*/
-
-	//var audio = new Audio();
 	var audio = document.getElementById('sound');
-	//audio.volume=0.2;
-	//audio.crossOrigin = "anonymous";
 	audio.src = "http://50.7.96.138:8536/stream"+"/;";
 
-	
-	//audio.play();
-
-	/*try {
-          audio.load();
-        } catch (e) {
-        	info.innerHTML += "<br>"+e;
-          //xhr.onerror();
-        }*/
     audio.oncanplay = function(){
   	    info.innerHTML += "<br>Sound Launch";
     }
-
-	
-
- /* audio.onloadedmetadata = function(e){
-  	info.innerHTML += "<br>Metadata";
-  	info.innerHTML += "<br>net: "  + audio.networkState;
-  	info.innerHTML += "<br>buffered: "  + audio.buffered;
-  	info.innerHTML += "<br>audioTracks: "  + audio.audioTracks;
-  }*/
 }
 
 //--------------------------------
@@ -509,10 +496,13 @@ var updateOimo = function(){
 //--------------------------------
 
 var populateSea3D = function (){
-	var geo = THREE.BufferGeometryUtils.fromGeometry(getSeaGeometry('Item000'));
-	var geo2 = THREE.BufferGeometryUtils.fromGeometry(getSeaGeometry('Item007'));
-	var mat1 = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0x606060, specular: 0x505050, shininess: 60 });
-	var mat2 = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0x606060, specular: 0x505050, shininess: 60 });
+	//var geo = THREE.BufferGeometryUtils.fromGeometry(getSeaGeometry('Item000'));
+	//var geo2 = THREE.BufferGeometryUtils.fromGeometry(getSeaGeometry('Item007'));
+	//var geo = getSeaGeometry('Item000');
+	//var geo2 = getSeaGeometry('Item007');
+
+	//var mat1 = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0x606060, specular: 0x505050, shininess: 60 });
+	//var mat2 = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0x606060, specular: 0x505050, shininess: 60 });
 
 	var avatarTexture = THREE.ImageUtils.loadTexture( 'img/avatar.jpg' );
 	avatarTexture.wrapS = avatarTexture.wrapT = THREE.RepeatWrapping;
@@ -550,31 +540,8 @@ var populateSea3D = function (){
     var modelsGeo = [h0, h1, h2, h3, h4];
     var weapons = [w0, w1, w2, w3, null];
 
+	// character
 	var i, rx, rz, m;
-	for(i=0; i<50; i++){
-		rx =  (Math.random()*360);
-		rz =  (Math.random()*360);
-		m = new THREE.Mesh(geo,  mat1);
-		m.scale.set(0.2,0.2,0.2);
-		m.rotation.z = -rx * ToRad;
-		m.rotation.y = -rz * ToRad;
-
-		m.position.copy( Orbit(center,rz,rx, 100));
-		m.castShadow = m.receiveShadow = true;
-		content.add(m);
-	}
-	for(i=0; i<50; i++){
-		rx =  (Math.random()*360);
-		rz =  (Math.random()*360);
-		m = new THREE.Mesh(geo2,  mat2);
-		m.scale.set(0.2,0.2,0.2);
-		m.rotation.z = -rx * ToRad;
-		m.rotation.y = -rz * ToRad;
-
-		m.position.copy( Orbit(center,rz,rx, 100));
-		m.castShadow = m.receiveShadow = true;
-		content.add(m);
-	}
 	var nnn, anim, rand, bone;
 
 	for(i=0; i<100; i++){
@@ -610,6 +577,34 @@ var populateSea3D = function (){
         scene.add(m);
     }
 
+    // items
+    var g0 = getSeaGeometry('Item000');
+	var g1 = getSeaGeometry('Item007');
+	var g2 = getSeaGeometry('exit');
+	var g3 = getSeaGeometry('Item005');
+
+    var items = [g0, g1, g2, g3];
+    var geometry = new THREE.Geometry();
+
+    var mat1 = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0x606060, specular: 0x505050, shininess: 60 });
+
+	for(i=0; i < 400; i++){
+		rand = Math.floor(Math.random()*4);
+		rx =  (Math.random()*360);
+		rz =  (Math.random()*360);
+		m = new THREE.Mesh( items[rand] );
+		m.scale.set(0.2,0.2,0.2);
+		m.rotation.z = -rx * ToRad;
+		m.rotation.y = -rz * ToRad;
+
+		m.position.copy( Orbit(center,rz,rx, 100));
+		THREE.GeometryUtils.merge(geometry, m);
+	}
+
+	var mesh = new THREE.Mesh(THREE.BufferGeometryUtils.fromGeometry(geometry), mat1);
+	mesh.castShadow = mesh.receiveShadow = true;
+    content.add(mesh);
+
 }
 
 var loadSea3DModel = function (){
@@ -619,8 +614,8 @@ var loadSea3DModel = function (){
 		for (var i=0; i !== SeaLoader.meshes.length; i++){
 			m = SeaLoader.meshes[i];
 			meshs.push( m );
-			/*info.innerHTML += m.name+"<br>";
-			if(m.animations){
+			//info.innerHTML += m.name+"<br>";
+			/*if(m.animations){
 				for (var j=0; j !== m.animations.length; j++){
 					info.innerHTML += "a -"+j+"- "+m.animations[j].name+"<br>";	
 			    }
