@@ -11,10 +11,6 @@ Compact Script
 
 [PNG to SCRIPT](http://lo-th.github.io/pi/PNGtoSCRIPT.html)<br>
 
-[WORKER LAB](http://lo-th.github.io/pi/test_worker.html)<br>
+[WORKER LAB](http://lo-th.github.io/pi/PNGtoWORKER.html)<br>
 
 [ASSETS LAB](http://lo-th.github.io/pi/test_assets.html)<br>
-
-Current source
-<img src="http://lo-th.github.io/pi/img/full.png"/> 
-167 KB

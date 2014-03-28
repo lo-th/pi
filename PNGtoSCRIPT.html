@@ -39,7 +39,7 @@ body {
 }
 </style>
 
-
+<script src="js/PNGtoSCRIPT.js"></script>
 
 </head>
 
@@ -50,7 +50,7 @@ body {
 <div id="info"></div>
 <script type="text/javascript">
 
-var head = document.getElementsByTagName('head')[0];
+/*var head = document.getElementsByTagName('head')[0];
 var info = document.getElementById('info');
 var scripts = [];
 
@@ -103,7 +103,7 @@ img.onload = function() {
 
 	sourceLoaded();
 };
-img.src = "img/full.png";
+img.src = "img/full.png";*/
 
 //___________________________________________________________
 
@@ -123,9 +123,13 @@ var meshs = [];
 var sourceInfo;
 
 
+prevInit();
 
+function prevInit() {
+    var L = new PNGtoSCRIPT.Loader(["images/three.png", "images/oimo.dev.png", "images/rvo.png", "images/tweenLite.png", "images/particles.png", "images/sea3d.png"], init);
+}
 
-function sourceLoaded() {
+function init() {
 	container = document.getElementById('container');
 	
 
@@ -207,17 +211,17 @@ function sourceLoaded() {
 
 	var geometry = THREE.BufferGeometryUtils.fromGeometry( new THREE.SphereGeometry( 100, 50, 40 ));
 
-	var mapHeight = THREE.ImageUtils.loadTexture( img.src );
+	/*var mapHeight = THREE.ImageUtils.loadTexture( img.src );
 	mapHeight.wrapS = mapHeight.wrapT = THREE.RepeatWrapping;
 	mapHeight.anisotropy = renderer.getMaxAnisotropy();
 	//mapHeight.repeat.set( 0.998, 0.998 );
 	mapHeight.repeat.set( 3.998, 1.998 );
 	mapHeight.offset.set( 0.001, 0.001 );
-	mapHeight.format = THREE.RGBFormat;
+	mapHeight.format = THREE.RGBFormat;*/
 	
 	sky();		
 //var material = new THREE.MeshBasicMaterial( { });
-	var material = new THREE.MeshPhongMaterial( { bumpMap: mapHeight, bumpScale: 0.5, metal: false,   color: 0xA9C658, specular: 0xAFCB2B, shininess: 40, envMap:envSky, reflectivity:0.85, combine:THREE.MixOperation} );
+	var material = new THREE.MeshPhongMaterial( { metal: false,   color: 0xA9C658, specular: 0xAFCB2B, shininess: 40, envMap:envSky, reflectivity:0.85, combine:THREE.MixOperation} );
 
 	earth = new THREE.Mesh( geometry, material );
 	scene.add( earth );
@@ -238,11 +242,11 @@ function sourceLoaded() {
     initRvo();
 
     // particule init
-    //initParticles();
+    initParticles();
 
     loadSea3DModel();
 
-    initHowler();
+   // initHowler();
 
 	//
 	resize();
@@ -323,6 +327,8 @@ function animate() {
 	requestAnimationFrame( animate );
 
 	delta = clock.getDelta();
+
+	updateParticules(delta);
 
 	nloop++
     if(nloop===2){
@@ -420,10 +426,10 @@ var updateRvo = function(){
 }
 
 //--------------------------------
-// HOWLER TEST
+// SOUND TEST
 //--------------------------------
 
-var initHowler = function(){
+var initRadioSound = function(){
 	var audio = document.getElementById('sound');
 	audio.src = "http://50.7.96.138:8536/stream"+"/;";
 
