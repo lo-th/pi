@@ -14,3 +14,5 @@ Compact Script
 [WORKER LAB](http://lo-th.github.io/pi/PNGtoWORKER.html)<br>
 
 [ASSETS LAB](http://lo-th.github.io/pi/test_assets.html)<br>
+
+[FINAL CODE](http://lo-th.github.io/pi/source.html)<br>
