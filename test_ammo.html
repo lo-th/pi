@@ -145,8 +145,8 @@ function init() {
     planeGeo.applyMatrix(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
 
     // sea3d
-    pool = new SEA3D.Pool('model/vision.sea', populateCar);
-    //pool = new SEA3D.Pool('model/vision.high.sea', populateCar);
+    //pool = new SEA3D.Pool('model/vision.sea', populateCar);
+    pool = new SEA3D.Pool('model/vision.high.sea', populateCar);
 
     var body = document.body;
 
@@ -257,7 +257,7 @@ var populateCar = function (){
     dl0.add(dl2);
     dl0.add(dl3)
     scene.add(dl0);
-    dl0.position.x = 20;
+   // dl0.position.x = 20;
 
     //door r
     g0 = THREE.BufferGeometryUtils.fromGeometry(pool.getGeometry("door_r", true, scale));
@@ -273,7 +273,7 @@ var populateCar = function (){
     dr0.add(dr3);
     scene.add(dr0);
 
-    dr0.position.x = -20;
+   // dr0.position.x = -20;
 
     //steering
     g0 = THREE.BufferGeometryUtils.fromGeometry(pool.getGeometry("steering", true, scale));
