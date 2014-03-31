@@ -128,18 +128,22 @@ var ADD = function(obj){
 var getMatrix = function(i){
 
 	var m = matrix[i];
+	m[0] = bodys[i].getActivationState();
+
+	if(m[0]==2) return;
+
     var t = bodys[i].getWorldTransform();
     var r = t.getRotation();
     var p = t.getOrigin();
 
-    m[0] = r.x();
-    m[1] = r.y();
-    m[2] = r.z();
-    m[3] = r.w();
+    m[1] = r.x();
+    m[2] = r.y();
+    m[3] = r.z();
+    m[4] = r.w();
 
-    m[4] = p.x();
-    m[5] = p.y();
-    m[6] = p.z();
-    m[7] = 0;
+    m[5] = p.x();
+    m[6] = p.y();
+    m[7] = p.z();
+    
 
 }
