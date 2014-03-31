@@ -16,3 +16,5 @@ Compact Script
 [ASSETS LAB](http://lo-th.github.io/pi/test_assets.html)<br>
 
 [FINAL CODE](http://lo-th.github.io/pi/source.html)<br>
+
+[AMMO LAB](http://lo-th.github.io/pi/test_ammo.html)<br>
