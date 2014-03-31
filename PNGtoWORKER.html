@@ -43,6 +43,7 @@ self.onmessage = function(e) {
 
     if ( simulator == null && e.data.url !== "") { // init
         // Load rvo script
+        //console.log( e.data.url.type )
         importScripts(e.data.url);
 
         simulator = new RVO.Simulator();
@@ -208,7 +209,7 @@ var bgcolor = 0x383838;
 //OIMO worker var
 var dt = 1/60, N=200;
 var matrixs = new Float32Array(N*16);
-var workerOimo = new Worker(window.URL.createObjectURL( new Blob([document.querySelector('#workerOimo').textContent])));
+var workerOimo = new Worker(window.URL.createObjectURL( new Blob([document.querySelector('#workerOimo').textContent], {type: "text/javascript"} )));
 workerOimo.postMessage = workerOimo.webkitPostMessage || workerOimo.postMessage;
 var oimoSendTime; // time when we sent last message
 var oimoInfo = 0; // fps info 
@@ -219,7 +220,7 @@ var dtrvo = 1/60;
 var rvoMatrixs = new Float32Array(Nagent*6);
 var rvoVel = new Float32Array(Nagent*3);
 var oldTime = 0;
-var workerRvo = new Worker(window.URL.createObjectURL(new Blob([document.querySelector('#workerRvo').textContent])));
+var workerRvo = new Worker(window.URL.createObjectURL(new Blob([document.querySelector('#workerRvo').textContent], {type: "text/javascript"} )));
 workerRvo.postMessage = workerRvo.webkitPostMessage || workerRvo.postMessage;
 var rvoSendTime; // time when we sent last message
 var rvoInfo = 0; // fps info 
@@ -229,25 +230,21 @@ var rvoInfo = 0; // fps info
 //-----------------------------------
 
 prevInit();
-
+var scriptLoader;
 function prevInit() {
-    var L = new PNGtoSCRIPT.Loader(["images/three.png", "images/oimo.dev.png", "images/rvo.png"], sourceLoaded);
+    scriptLoader = new PNGtoSCRIPT.Loader(["images/three.png", "images/oimo.dev.png", "images/rvo.png"], init, [0, 1, 1]);
 }
 
-function sourceLoaded (){
+function init (){
     
     // send OIMO script to worker
-    var blobO = new Blob([document.querySelector('#OIMO').textContent]);
-    var url1 = window.URL.createObjectURL(blobO);
-    sendDataToOimoWorker(url1);
+    sendDataToOimoWorker(scriptLoader.ref["OIMO"]);
 
-     // send RVO script to worker
-    var blobR = new Blob([document.querySelector('#RVO').textContent]);
-    var url2 = window.URL.createObjectURL(blobR);
-    sendDataToRvoWorker(url2);
+    // send RVO script to worker
+    sendDataToRvoWorker(scriptLoader.ref["RVO"]);
 
-    init();
-    loop();
+    init3Dengine();
+    
 }
 
 //-----------------------------------
@@ -320,7 +317,7 @@ function sendDataToRvoWorker(url){
 // THREE JS SIDE 
 //-----------------------------------
 
-function init() {
+function init3Dengine() {
     if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
     camPos = { horizontal: 90, vertical: 30, distance: 300, automove: false };
@@ -441,6 +438,8 @@ function init() {
     }else if( body.attachEvent ){
         body.attachEvent("onmousewheel" , onMouseWheel); // ie
     }
+
+    loop();
 }
 
 function resize() {

@@ -1,13 +1,19 @@
 var PNGtoSCRIPT = { REV: 0.1 };
-
-PNGtoSCRIPT.Loader = function(Files, end){
+window.URL = window.URL || window.webkitURL;
+PNGtoSCRIPT.Loader = function(Files, End, Types){
 	this.files = [];
-	this.script = [];
-	this.end = end;
+	this.num = 0;
+	this.end = End;
 	this.head = document.getElementsByTagName('head')[0];
+	this.ref = [];// get reference script for worker
 
 	if( this.isArray(Files) ) this.files = Files; 
 	else this.files[0] = Files;
+
+	this.types = Types || [];
+	for(var i=0; i<this.files.length; i++){
+		if(this.types[i] == undefined)this.types[i] = 0;
+	}
 
 	this.load(this.files[0]);
 }
@@ -38,24 +44,36 @@ PNGtoSCRIPT.Loader.prototype = {
 						if( pix<96 ) string += String.fromCharCode(pix+32);
 					}
 					self.URL.revokeObjectURL(img.src);
+					// clear canvas
+					c = null; delete c;
 
+					// get script name
 					var nn = string.indexOf("var");
 					var pn = string.indexOf("=");
 					var name = string.substring(nn+4,pn);
-					var n = _this.script.length;
-					var script = document.createElement("script");
-					script.type = "text/javascript";
-					script.charset = "utf-8";
-					script.async = true;
-					script.id = name;
-					script.textContent = string;
-					_this.head.appendChild(script);
+					if(name=="Module;Module||(Module") name = "AMMO";
 
-					var n = _this.script.length;
-					_this.script[n] = script;
+					if(_this.types[_this.num] == 0){ // direct script 
+						var script = document.createElement("script");
+						script.type = "text/javascript";
+						script.charset = "utf-8";
+						script.async = true;
+						script.id = name;
+						script.textContent = string;
+						_this.head.appendChild(script);
+					}
+					else {// for worker
+						var sblob = new Blob([ string ], {type: "text/javascript"} );
+						_this.ref[name] = window.URL.createObjectURL(sblob);
+					}
 
-	    		    if(_this.script.length == _this.files.length)_this.end();
-	    		    else _this.load(_this.files[n+1]);
+					string = "";
+
+					// load next or end
+	    		    if(_this.num == _this.files.length-1)_this.end();
+	    		    else {_this.num++; _this.load(_this.files[_this.num]); }
+
+
 	    		}
 	    		img.src = self.URL.createObjectURL(blob);
 	    	}

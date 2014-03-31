@@ -38,6 +38,8 @@ var clock;
 var meshs = [];
 var pool;
 
+var scriptLoader;
+
 
 //-----------------------------------
 // ALL SOURCE LOADED FROM PNG 
@@ -46,17 +48,80 @@ var pool;
 prevInit();
 
 function prevInit() {
-    var L = new PNGtoSCRIPT.Loader(["images/three.png", "images/ammo.png", "images/sea3d.png"], init);
+    scriptLoader = new PNGtoSCRIPT.Loader(["images/ammo.png", "images/three.png", "images/sea3d.png"], init, [1, 0, 0]);
 }
 
 //-----------------------------------
-// THREE JS SIDE 
+// AMMO SIDE 
 //-----------------------------------
 
+var AmmoWorker = new Worker('js/ammo_worker.js');
+AmmoWorker.postMessage = AmmoWorker.webkitPostMessage || AmmoWorker.postMessage;
+var ammoInfo = [];
+var ammoFps = 0;
+var ammoTest = 0;
+
+AmmoWorker.onmessage = function(e) {
+	var phase = e.data.tell;
+	if( phase === "START"){
+		console.log("ammo started");
+
+		meshs[0] = new THREE.Mesh( BoxGeometry, BoxMaterial0 );
+		meshs[0].scale.set(300,30,300);
+		scene.add(meshs[0]);
+		AmmoWorker.postMessage({tell:"ADD", obj:{type:"box", size:[300,30,300], pos:[0, -14, 0], rot:[0,45,0], mass:0} });
+
+		/*meshs[1] = new THREE.Mesh( BoxGeometry, BoxMaterial );
+			scene.add(meshs[1]);
+			AmmoWorker.postMessage({tell:"ADD", obj:{type:"box", pos:[0, 100, 0], mass:1} });*/
+		var mx,my,mz
+		for(var i=1; i<1000; i++){
+			mx = 1 + Math.random()*5;
+			my = 1 + Math.random()*5;
+			mz = 1 + Math.random()*5;
+			meshs[i] = new THREE.Mesh( BoxGeometry, BoxMaterial );
+			meshs[i].scale.set(mx,my,mz)
+			scene.add(meshs[i]);
+			AmmoWorker.postMessage({tell:"ADD", obj:{type:"box", size:[mx,my,mz], pos:[0, 100+i*10, 0], mass:1} });
+		}
+	}
+	if( phase === "RUN"){
+		ammoInfo = e.data.infos;
+		var mtx = e.data.matrix;
+		var mesh, m;
+    	var i = mtx.length;
+    	while (i--) {
+	    	if( meshs[i] ){
+	    		mesh = meshs[i];
+	    		m = mtx[i];
+	    		mesh.position.set( m[4], m[5], m[6] );
+	    		mesh.quaternion.set( m[0], m[1], m[2], m[3] );
+	    	}
+	    }
+	}
+
+}
+
+//-----------------------------------
+// THREE SIDE 
+//-----------------------------------
+var BoxGeometry;
+var BoxMaterial;
+var BoxMaterial0;
+
 function init() {
+    // send AMMO script to worker
+	AmmoWorker.postMessage({tell:"INIT", url:scriptLoader.ref["AMMO"] });
+
+	BoxGeometry = THREE.BufferGeometryUtils.fromGeometry(new THREE.CubeGeometry( 1, 1, 1 ));
+	BoxMaterial = new THREE.MeshPhongMaterial({ color: 0xFF0505, shininess: 120 });
+	BoxMaterial0 = new THREE.MeshPhongMaterial({ color: 0x101010, shininess: 120 });
+
+	
+
     if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
-    camPos = { horizontal: 90, vertical: 30, distance: 300, automove: false };
+    camPos = { horizontal: 90, vertical: 70, distance: 300, automove: false };
     mouse = { ox:0, oy:0, h:0, v:0, mx:0, my:0, down:false, over:false, moving:true };
 
     clock = new THREE.Clock();
@@ -146,7 +211,7 @@ function init() {
 
     // sea3d
     //pool = new SEA3D.Pool('model/vision.sea', populateCar);
-    pool = new SEA3D.Pool('model/vision.high.sea', populateCar);
+    //pool = new SEA3D.Pool('model/vision.high.sea', populateCar);
 
     var body = document.body;
 
@@ -181,7 +246,7 @@ function loop() {
         THREE.AnimationHandler.update( delta*2 );
     }
     renderer.render( scene, camera );
-   // displayInfo();
+    displayInfo();
 }
 
 function displayInfo(){
@@ -191,11 +256,11 @@ function displayInfo(){
     } fps++;
 
     var info =[
-        "<h3>ASSETS LAB</h3><br>",
+        "<h3>AMMO LAB</h3><br>",
         sourceInfo,
-        //"<br>Oimo Physics: " + oimoInfo +" fps<br>",
-        //"Rvo simulator: " + rvoInfo +" fps<br>",
-        "Three Render: " + fpsint +" fps<br>"
+        "Three : " + fpsint +" fps<br>",
+        "Ammo : " + ammoInfo[0]+" fps<br>",
+        "rigids : " + ammoInfo[1]+" <br>"
     ].join("\n");
     document.getElementById("info").innerHTML = info;
 }
@@ -210,17 +275,15 @@ var populateCar = function (){
     }
 
     var scale = 0.1;
+    var c = [0x202020, 0x606060]
 
-    var mat0 = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0x050505, specular: 0x303030, shininess: 120 });
-    var mat1 = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0xCCCCCC, specular: 0x303030, shininess: 120 });
-    var mat2 = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0x373536, specular: 0x303030, shininess: 120 });
-    var mat3 = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0x909090, specular: 0x303030, shininess: 120 });
-    var mat4 = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0x2020FF, specular: 0x303030, shininess: 120, transparent:true, opacity:0.5, side:THREE.DoubleSide });
-    var mat5 = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0xFF0000, specular: 0x303030, shininess: 120, transparent:true, opacity:0.9 });
-    var mat6 = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0xFFFFFF, specular: 0x303030, shininess: 120, transparent:true, opacity:0.9 });
-
-
-
+    var mat0 = new THREE.MeshPhongMaterial({ ambient: c[0], color: 0x050505, specular: c[1], shininess: 120 });
+    var mat1 = new THREE.MeshPhongMaterial({ ambient: c[0], color: 0xCCCCCC, specular: c[1], shininess: 120 });
+    var mat2 = new THREE.MeshPhongMaterial({ ambient: c[0], color: 0x373536, specular: c[1], shininess: 120 });
+    var mat3 = new THREE.MeshPhongMaterial({ ambient: c[0], color: 0x909090, specular: c[1], shininess: 120 });
+    var mat4 = new THREE.MeshPhongMaterial({ ambient: c[0], color: 0x2020FF, specular: c[1], shininess: 120, transparent:true, opacity:0.5, side:THREE.DoubleSide });
+    var mat5 = new THREE.MeshPhongMaterial({ ambient: c[0], color: 0xFF0000, specular: c[1], shininess: 120, transparent:true, opacity:0.9 });
+    var mat6 = new THREE.MeshPhongMaterial({ ambient: c[0], color: 0xFFFFFF, specular: c[1], shininess: 120, transparent:true, opacity:0.9 });
 
     // wheel
     var g0 = THREE.BufferGeometryUtils.fromGeometry(pool.getGeometry("wheel", true, scale));
@@ -303,17 +366,6 @@ var populateCar = function (){
     }
 
     scene.add(car);
-
-
-
-
-
-
-
-
-
-	//var h0 = pool.getGeometry("");
-
 }
 
 //-----------------------------------
