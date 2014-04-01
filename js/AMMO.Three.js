@@ -17,7 +17,6 @@ AMMO.Rigid = function(obj){
 
 	bodys[this.id] = this;
 	matrix[this.id] = new Float32Array(8);
-
 }
 
 AMMO.Rigid.prototype = {
