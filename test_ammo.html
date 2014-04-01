@@ -68,8 +68,8 @@ AmmoWorker.onmessage = function(e) {
 
 		meshs[0] = new THREE.Mesh( BoxGeometry, BoxMaterial0 );
 		meshs[0].scale.set(300,30,300);
-		meshs[0].position.y = -14;
-		meshs[0].rotation.y = 45*ToRad;
+		//meshs[0].position.y = -14;
+		//meshs[0].rotation.y = 45*ToRad;
 		scene.add(meshs[0]);
 		AmmoWorker.postMessage({tell:"ADD", obj:{type:"box", size:[300,30,300], pos:[0, -14, 0], rot:[0,45,0], mass:0} });
 
@@ -101,6 +101,10 @@ AmmoWorker.onmessage = function(e) {
 	    			if(mesh.material.name=="blue")mesh.material = BoxMaterial1;
 	    		    mesh.position.set( m[5], m[6], m[7] );
 	    		    mesh.quaternion.set( m[1], m[2], m[3], m[4] );
+
+	    		    if(m[6]<-20){
+	    		    	AmmoWorker.postMessage({tell:"SET", id:i, obj:{pos:[0, 30+Math.random()*60, 0]} });
+	    		    }
 	    	    }
 	    	}
 	    }
@@ -152,7 +156,7 @@ function init() {
     scene = new THREE.Scene();
 
     // camera
-    camera = new THREE.PerspectiveCamera( 30, window.innerWidth / window.innerHeight, 0.5, 1000 );
+    camera = new THREE.PerspectiveCamera( 30, window.innerWidth / window.innerHeight, 0.5, 2000 );
     camera.position.set( 0, 30, 100 );
     center = new THREE.Vector3();
     moveCamera();
