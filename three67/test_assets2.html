@@ -119,7 +119,7 @@ function init() {
     mesh.castShadow = false;
     mesh.receiveShadow = true;
     mesh.rotation.x = -90 * ToRad;
-    //scene.add( mesh );
+    scene.add( mesh );
 
 
     Pool = new SEA3D.Pool('model/dragon.sea', populate);
@@ -179,13 +179,18 @@ function loop() {
 //--------------------------------
 
 function populate(){
+    var dTexture = THREE.ImageUtils.loadTexture( 'img/dragon.jpg' );
+    dTexture.wrapS = dTexture.wrapT = THREE.RepeatWrapping;
+    dTexture.anisotropy = renderer.getMaxAnisotropy();
+    dTexture.repeat.set( 1, -1 );
+    dTexture.offset.set( 1, 1 );
 
-    var mat = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0x606060, specular: 0x505050, shininess: 60, skinning: true });
+    var mat = new THREE.MeshPhongMaterial({ ambient: 0x202020, map: dTexture, specular: 0x505050, shininess: 60, skinning: true });
 
     var model = Pool.getGeometry("Dragon");
 
 
- console.log(Pool.models[0].anim);
+    //console.log(Pool.models[0].anim);
 
     var i, rx, rz, m, w;
 
@@ -217,12 +222,10 @@ function populate(){
         m.position.z = -rz;
 
         //m.position.copy( Orbit(center,rz,rx, 105));
-        //m.castShadow = m.receiveShadow = true;
+        m.castShadow = true;//m.receiveShadow = true;
         nnn = Math.round(Math.random()*2);
-        //if(nnn>0)  
-        anim = "Dragon/fly";
-       // else 
-        // anim = "Dragon/walk↵";
+        if(nnn>0){ anim = "Dragon/fly"; m.position.y += 10+ (Math.random()*5)}
+        else {anim = "Dragon/walk"; m.position.y += 3}
 
         var animation = new THREE.Animation( m, anim );
         animation.play( 10 * Math.random() );
