@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Assets lab</title>
+    <title>Assets lab 2</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 <style>
@@ -30,23 +30,22 @@ var info = document.getElementById("info");
 var sourceInfo = "";
 
 // THREE var
-var container, camera, scene, renderer, camPos, mouse;;
-var oimoMeshes=[]
-var rvoMeshes=[];
+var container, camera, scene, renderer, camPos, mouse;
 
 var fps=0, time, time_prev=0, fpsint = 0;
 var bgcolor = 0x606060;
 var clock;
 var stats;
 var meshs = [];
-
+var squel = [];
+var Pool;
 
 init();
 
 function init() {
     if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
-    camPos = { horizontal: 90, vertical: 30, distance: 300, automove: false };
+    camPos = { horizontal: 120, vertical: 80, distance: 200, automove: false };
     mouse = { ox:0, oy:0, h:0, v:0, mx:0, my:0, down:false, over:false, moving:true };
 
     clock = new THREE.Clock();
@@ -113,31 +112,18 @@ function init() {
     scene.add( backGeo );
 
     var material = new THREE.MeshBasicMaterial( { color: bgcolor } );
-    var cubeMaterial01 = new THREE.MeshPhongMaterial( { color: 0xCC8888 } );
-    var cubeMaterial02 = new THREE.MeshPhongMaterial( { color: 0x88CC88 } );
 
-    var sphereMaterial = new THREE.MeshPhongMaterial( { color: 0x8888CC } );
-
-    var planeMaterial01 = new THREE.MeshPhongMaterial( { color: 0xCC8888 - 0x444444 } );
-    var planeMaterial02 = new THREE.MeshPhongMaterial( { color: 0x88CC88 - 0x444444 } );
-
-    geometry =new THREE.PlaneGeometry( 400, 400, 1, 1 );// THREE.BufferGeometryUtils.fromGeometry( new THREE.PlaneGeometry( 400, 400, 1, 1 ) );
+    geometry = THREE.BufferGeometryUtils.fromGeometry( new THREE.PlaneGeometry( 400, 400, 1, 1 ) );
     
     var mesh = new THREE.Mesh( geometry, material );
     mesh.castShadow = false;
     mesh.receiveShadow = true;
     mesh.rotation.x = -90 * ToRad;
     //scene.add( mesh );
-       
-    // geometry
-  /*  var cubeGeo = new THREE.CubeGeometry( 0.5,  1,  0.25, 1, 1, 1); //THREE.BufferGeometryUtils.fromGeometry();
-    var sphereGeo = new THREE.SphereGeometry( 0.25, 12, 8); ///THREE.BufferGeometryUtils.fromGeometry();
-    var planeGeo = new THREE.PlaneGeometry( 0.5, 0.25, 1, 1); //THREE.BufferGeometryUtils.fromGeometry();
-    planeGeo.applyMatrix(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
 
-*/
 
-    loadSea3DModel();
+    Pool = new SEA3D.Pool('model/dragon.sea', populate);
+
 
     var body = document.body;
 
@@ -185,34 +171,21 @@ function loop() {
     }
     renderer.render( scene, camera );
     stats.update();
-   // displayInfo();
 }
 
-function displayInfo(){
-    time = Date.now();
-    if (time - 1000 > time_prev) {
-        time_prev = time; fpsint = fps; fps = 0;
-    } fps++;
-
-    var info =[
-        "<h3>ASSETS LAB</h3><br>",
-        sourceInfo,
-        //"<br>Oimo Physics: " + oimoInfo +" fps<br>",
-        //"Rvo simulator: " + rvoInfo +" fps<br>",
-        "Three Render: " + fpsint +" fps<br>"
-    ].join("\n");
-    document.getElementById("info").innerHTML = info;
-}
 
 //--------------------------------
 // SEA3D
 //--------------------------------
-var squel = [];
 
-var populateSea3D = function (){
+function populate(){
+
     var mat = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0x606060, specular: 0x505050, shininess: 60, skinning: true });
 
-    var model = getMeshByName("Dragon").geometry;
+    var model = Pool.getGeometry("Dragon");
+
+
+ console.log(Pool.models[0].anim);
 
     var i, rx, rz, m, w;
 
@@ -224,11 +197,11 @@ var populateSea3D = function (){
 
     for(i=0; i<num; i++){
         rand = Math.floor(Math.random()*5);
-        rx =  -50+(Math.random()*100);
-        rz =  -50+(Math.random()*100);
+        rx =  -100+(Math.random()*200);
+        rz =  -100+(Math.random()*200);
 
         m = new THREE.SkinnedMesh(model, mat, false );
-        m.scale.set(0.03,0.03,-0.03);
+        m.scale.set(0.1,0.1,-0.1);
 
         skeletonHelper = new THREE.SkeletonHelper( m );
         skeletonHelper.material.linewidth = 3;
@@ -246,9 +219,10 @@ var populateSea3D = function (){
         //m.position.copy( Orbit(center,rz,rx, 105));
         //m.castShadow = m.receiveShadow = true;
         nnn = Math.round(Math.random()*2);
-        //if(nnn>0) 
-            anim = "Dragon/fly";
-        //else anim = "Dragon/walk"
+        //if(nnn>0)  
+        anim = "Dragon/fly";
+       // else 
+        // anim = "Dragon/walk↵";
 
         var animation = new THREE.Animation( m, anim );
         animation.play( 10 * Math.random() );
@@ -259,64 +233,6 @@ var populateSea3D = function (){
 
     
 
-}
-
-function loadSea3DModel(){
-    var SeaLoader = new THREE.SEA3D(true);
-    SeaLoader.onComplete = function( e ) {
-        var m;
-        for (var i=0; i !== SeaLoader.meshes.length; i++){
-            m = SeaLoader.meshes[i];
-            meshs.push( m );
-            info.innerHTML += m.name+"<br>";
-           /* if(m.animations){
-                for (var j=0; j !== m.animations.length; j++){
-                    info.innerHTML += "a -"+j+"- "+m.animations[j].name+"<br>"; 
-                }
-            }*/
-        }
-        populateSea3D();
-    }
-    SeaLoader.load( 'model/dragon.sea' );
-}
-
-function getSeaGeometry(name, scale, axe, child, deep){
-    var c = child || 0;
-    var d = deep || 0;
-    var a = axe || "z";
-    var s = scale || 1;
-    var m; 
-    if(c === 0 && d === 0) m = getMeshByName(name).geometry;
-    else if(c >= 1 && d === 0) m = getMeshByName(name).children[c-1].geometry;
-    else if(c >= 1 && d === 1) m = getMeshByName(name).children[0].children[c-1].geometry;
-    else if(c >= 1 && d === 2) m = getMeshByName(name).children[0].children[0].children[c-1].geometry;
-    scaleGeometry(m, s, a);
-    return m;
-}
-
-function getMeshByName(name){
-    for (var i=0; i !== meshs.length; i++){
-        if(meshs[i].name === name){
-            return meshs[i];
-        } 
-    } 
-}
-
-function scaleGeometry(geometry, scale, Axe) {
-    var s = 1;
-    var axe = Axe || 'z' 
-    for( var i = 0; i < geometry.vertices.length; i++) {
-        var vertex  = geometry.vertices[i];
-        if(axe==='x')vertex.x *= -s;
-        else vertex.x *= s;
-        if(axe==='y')vertex.y *= -s;
-        else vertex.y *= s;
-        if(axe==='z')vertex.z *= -s;
-        else vertex.z *= s;
-    }
-    geometry.computeFaceNormals();
-    geometry.computeVertexNormals();
-    geometry.verticesNeedUpdate = true;
 }
 
 //-----------------------------------

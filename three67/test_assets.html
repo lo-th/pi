@@ -29,16 +29,16 @@ var ToRad = Math.PI / 180;
 var info = document.getElementById("info");
 var sourceInfo = "";
 
-// THREE var
-var container, camera, scene, renderer, camPos, mouse;;
-var oimoMeshes=[]
-var rvoMeshes=[];
+
+var container, camera, scene, renderer, camPos, mouse;
 
 var fps=0, time, time_prev=0, fpsint = 0;
 var bgcolor = 0x606060;
 var clock;
 var stats;
 var meshs = [];
+var squel = [];
+var Pool;
 
 
 init();
@@ -46,7 +46,7 @@ init();
 function init() {
     if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
-    camPos = { horizontal: 90, vertical: 30, distance: 300, automove: false };
+    camPos = { horizontal: 90, vertical: 80, distance: 130, automove: false };
     mouse = { ox:0, oy:0, h:0, v:0, mx:0, my:0, down:false, over:false, moving:true };
 
     clock = new THREE.Clock();
@@ -113,15 +113,8 @@ function init() {
     scene.add( backGeo );
 
     var material = new THREE.MeshBasicMaterial( { color: bgcolor } );
-    var cubeMaterial01 = new THREE.MeshPhongMaterial( { color: 0xCC8888 } );
-    var cubeMaterial02 = new THREE.MeshPhongMaterial( { color: 0x88CC88 } );
 
-    var sphereMaterial = new THREE.MeshPhongMaterial( { color: 0x8888CC } );
-
-    var planeMaterial01 = new THREE.MeshPhongMaterial( { color: 0xCC8888 - 0x444444 } );
-    var planeMaterial02 = new THREE.MeshPhongMaterial( { color: 0x88CC88 - 0x444444 } );
-
-    geometry =new THREE.PlaneGeometry( 400, 400, 1, 1 );// THREE.BufferGeometryUtils.fromGeometry( new THREE.PlaneGeometry( 400, 400, 1, 1 ) );
+    geometry = THREE.BufferGeometryUtils.fromGeometry( new THREE.PlaneGeometry( 400, 400, 1, 1 ) );
     
     var mesh = new THREE.Mesh( geometry, material );
     mesh.castShadow = false;
@@ -129,15 +122,9 @@ function init() {
     mesh.rotation.x = -90 * ToRad;
     scene.add( mesh );
        
-    // geometry
-   /* var cubeGeo = new THREE.CubeGeometry( 0.5,  1,  0.25, 1, 1, 1); //THREE.BufferGeometryUtils.fromGeometry();
-    var sphereGeo = new THREE.SphereGeometry( 0.25, 12, 8); ///THREE.BufferGeometryUtils.fromGeometry();
-    var planeGeo = new THREE.PlaneGeometry( 0.5, 0.25, 1, 1); //THREE.BufferGeometryUtils.fromGeometry();
-    planeGeo.applyMatrix(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
-*/
 
+    Pool = new SEA3D.Pool('model/g2.sea', populate);
 
-    loadSea3DModel();
 
     var body = document.body;
 
@@ -185,47 +172,23 @@ function loop() {
     }
     renderer.render( scene, camera );
     stats.update();
-   // displayInfo();
 }
 
-function displayInfo(){
-    time = Date.now();
-    if (time - 1000 > time_prev) {
-        time_prev = time; fpsint = fps; fps = 0;
-    } fps++;
-
-    var info =[
-        "<h3>ASSETS LAB</h3><br>",
-        sourceInfo,
-        //"<br>Oimo Physics: " + oimoInfo +" fps<br>",
-        //"Rvo simulator: " + rvoInfo +" fps<br>",
-        "Three Render: " + fpsint +" fps<br>"
-    ].join("\n");
-    document.getElementById("info").innerHTML = info;
-}
 
 //--------------------------------
 // SEA3D
 //--------------------------------
-var squel = [];
 
-var populateSea3D = function (){
-    var geo = getSeaGeometry('Item000');//THREE.BufferGeometryUtils.fromGeometry();
-    var geo2 = getSeaGeometry('Item007');//THREE.BufferGeometryUtils.fromGeometry();
-    var mat1 = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0x606060, specular: 0x505050, shininess: 60 });
-    var mat2 = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0x606060, specular: 0x505050, shininess: 60 });
+function populate(){
 
-    //var avatarTexture = 
     var avatarTexture = THREE.ImageUtils.loadTexture( 'img/avatar.jpg' );
     avatarTexture.wrapS = avatarTexture.wrapT = THREE.RepeatWrapping;
     avatarTexture.anisotropy = renderer.getMaxAnisotropy();
-    //mapHeight.repeat.set( 0.998, 0.998 );
     avatarTexture.repeat.set( 1, -1 );
     avatarTexture.offset.set( 1, 1 );
     var avatarTexture2 = THREE.ImageUtils.loadTexture( 'img/avatar2.jpg' );
     avatarTexture2.wrapS = avatarTexture2.wrapT = THREE.RepeatWrapping;
     avatarTexture2.anisotropy = renderer.getMaxAnisotropy();
-    //mapHeight.repeat.set( 0.998, 0.998 );
     avatarTexture2.repeat.set( 1, -1 );
     avatarTexture2.offset.set( 1, 1 );
 
@@ -239,45 +202,21 @@ var populateSea3D = function (){
    
     var materials = [mat3, mat3, mat4, mat4, mat5];
 
-    var h0 = getMeshByName(models[0]).geometry;
-    var h1 = getMeshByName(models[1]).geometry;
-    var h2 = getMeshByName(models[2]).geometry;
-    var h3 = getMeshByName(models[3]).geometry;
-    var h4 = getMeshByName(models[4]).geometry;
+    var h0 = Pool.getGeometry(models[0]);
+    var h1 = Pool.getGeometry(models[1]);
+    var h2 = Pool.getGeometry(models[2]);
+    var h3 = Pool.getGeometry(models[3]);
+    var h4 = Pool.getGeometry(models[4]);
 
-    var w0 = THREE.BufferGeometryUtils.fromGeometry(getMeshByName("weapon0").geometry);
-    var w1 = THREE.BufferGeometryUtils.fromGeometry(getMeshByName("weapon1").geometry);
-    var w2 = THREE.BufferGeometryUtils.fromGeometry(getMeshByName("weapon2").geometry);
-    var w3 = THREE.BufferGeometryUtils.fromGeometry(getMeshByName("weapon3").geometry);
+    var w0 = THREE.BufferGeometryUtils.fromGeometry(Pool.getGeometry("weapon0"));
+    var w1 = THREE.BufferGeometryUtils.fromGeometry(Pool.getGeometry("weapon1"));
+    var w2 = THREE.BufferGeometryUtils.fromGeometry(Pool.getGeometry("weapon2"));
+    var w3 = THREE.BufferGeometryUtils.fromGeometry(Pool.getGeometry("weapon3"));
 
     var modelsGeo = [h0, h1, h2, h3, h4];
     var weapons = [w0, w1, w2, w3, null];
 
     var i, rx, rz, m, w;
-    /*for(i=0; i<50; i++){
-        rx =  (Math.random()*360);
-        rz =  (Math.random()*360);
-        m = new THREE.Mesh(geo,  mat1);
-        m.scale.set(0.2,0.2,0.2);
-        m.rotation.z = -rx * ToRad;
-        m.rotation.y = -rz * ToRad;
-
-        m.position.copy( Orbit(center,rz,rx, 100));
-        m.castShadow = m.receiveShadow = true;
-        content.add(m);
-    }
-    for(i=0; i<50; i++){
-        rx =  (Math.random()*360);
-        rz =  (Math.random()*360);
-        m = new THREE.Mesh(geo2,  mat2);
-        m.scale.set(0.2,0.2,0.2);
-        m.rotation.z = -rx * ToRad;
-        m.rotation.y = -rz * ToRad;
-
-        m.position.copy( Orbit(center,rz,rx, 100));
-        m.castShadow = m.receiveShadow = true;
-        content.add(m);
-    }*/
 
     var nnn, anim, rand, bone;
     var num = 120;
@@ -317,7 +256,7 @@ var populateSea3D = function (){
         else m.position.y = 1;
         m.position.z = -rz;
 
-        //m.position.copy( Orbit(center,rz,rx, 105));
+       // m.position.copy( Orbit(center,rz,rx, 105));
         m.castShadow = m.receiveShadow = true;
         nnn = Math.round(Math.random()*2);
         if(nnn>0) anim = models[rand]+"/walk";
@@ -329,68 +268,6 @@ var populateSea3D = function (){
 
         
     }
-
-    
-
-}
-
-function loadSea3DModel(){
-    var SeaLoader = new THREE.SEA3D(true);
-    SeaLoader.onComplete = function( e ) {
-        var m;
-        for (var i=0; i !== SeaLoader.meshes.length; i++){
-            m = SeaLoader.meshes[i];
-            meshs.push( m );
-            info.innerHTML += m.name+"<br>";
-           /* if(m.animations){
-                for (var j=0; j !== m.animations.length; j++){
-                    info.innerHTML += "a -"+j+"- "+m.animations[j].name+"<br>"; 
-                }
-            }*/
-        }
-        populateSea3D();
-    }
-    SeaLoader.load( 'model/g2.sea' );
-}
-
-function getSeaGeometry(name, scale, axe, child, deep){
-    var c = child || 0;
-    var d = deep || 0;
-    var a = axe || "z";
-    var s = scale || 1;
-    var m; 
-    if(c === 0 && d === 0) m = getMeshByName(name).geometry;
-    else if(c >= 1 && d === 0) m = getMeshByName(name).children[c-1].geometry;
-    else if(c >= 1 && d === 1) m = getMeshByName(name).children[0].children[c-1].geometry;
-    else if(c >= 1 && d === 2) m = getMeshByName(name).children[0].children[0].children[c-1].geometry;
-    scaleGeometry(m, s, a);
-    return m;
-}
-
-function getMeshByName(name){
-    for (var i=0; i !== meshs.length; i++){
-        if(meshs[i].name === name){
-            return meshs[i];
-        } 
-    } 
-}
-
-function scaleGeometry(geometry, scale, Axe) {
-    var s = 1;
-    var axe = Axe || 'z' 
-    for( var i = 0; i < geometry.vertices.length; i++) {
-        var vertex  = geometry.vertices[i];
-        if(axe==='x')vertex.x *= -s;
-        else vertex.x *= s;
-        if(axe==='y')vertex.y *= -s;
-        else vertex.y *= s;
-        if(axe==='z')vertex.z *= -s;
-        else vertex.z *= s;
-    }
-    geometry.computeFaceNormals();
-    //geometry.computeCentroids();
-    geometry.computeVertexNormals();
-    geometry.verticesNeedUpdate = true;
 }
 
 //-----------------------------------
