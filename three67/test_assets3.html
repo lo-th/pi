@@ -323,7 +323,7 @@ function init() {
 
     //renderer.gammaInput = true;
     //renderer.gammaOutput = true;
-    renderer.shadowMapEnabled = true;
+   // renderer.shadowMapEnabled = true;
     renderer.autoClearColor = false;
     renderer.autoClear = false;
 
@@ -347,10 +347,10 @@ function init() {
 
     light.position.set( d, d, d );
 
-    light.castShadow = true;
+    //light.castShadow = true;
     //light.shadowCameraVisible = true;
 
-    light.shadowMapWidth = 1024;
+   /* light.shadowMapWidth = 1024;
     light.shadowMapHeight = 1024;
 
     light.shadowCameraLeft = -d;
@@ -360,7 +360,7 @@ function init() {
 
     light.shadowCameraFar = 3*d;
     light.shadowCameraNear = d;
-    light.shadowDarkness = 0.5;
+    light.shadowDarkness = 0.5;*/
 
     scene.add( light );
 
@@ -461,7 +461,8 @@ function populate(){
         m = new THREE.SkinnedMesh(model, mat, false );
         m.scale.set(0.03,0.03,-0.03);
 
-        m.castShadow = true;//m.receiveShadow = true;
+        //m.castShadow = true;
+        //m.receiveShadow = true;
        // nnn = Math.round(Math.random()*2);
         //if(nnn>0){ anim = ModelName + "/idle";}
        // else {anim = ModelName + "/walk";}
