@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>BVH player</title>
+	<meta charset="utf-8">
+	<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+	<meta content="utf-8" http-equiv="encoding">
+	<meta http-equiv="X-UA-Compatible" content="IE=11,chrome=1">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<style>
+    * {  margin: 0; padding: 0; border: 0; -webkit-user-select: none; -khtml-user-select: none; -moz-user-select: -moz-none; -o-user-select: none; user-select: none; }
+    body { background-color: #383838; overflow: hidden; color: #eeeeee; font-family: monospace; font-size: 12px; }
+    input{ margin:0; padding:4px; }
+    #interface{ position: absolute; left:10px; top:10px; width:456px; height:20px; }
+    #info{ pointer-events:none; position: absolute; left:10px; top:10px; width: 400px; height: 400px; }
+    #guiContener {  position: absolute; overflow-x:auto; height:100%; width:220px; top: 0px; left: 0px; background-color: #161616;}
+    #gui { position:absolute; height:100%; top:0px; left:-4px; }
+    #debug { position:absolute; top: 6px; left:225px; color: #a2a2a2; text-align: left; font-size:11px; pointer-events:none; }
+    #output2 { position:absolute; bottom:30px; right:10px; color: #a2a2a2; text-align: right; text-shadow: 1px 1px 0px #000;  pointer-events:none;}
+    #output1 { position:absolute; bottom:30px; left:10px; color: #a2a2a2; text-align: left; text-shadow: 1px 1px 0px #000; pointer-events:none; }
+    #copy { position:absolute; bottom:5px; right:10px; color: #a2a2a2; text-align: right; text-shadow: 1px 1px 0px #000;  pointer-events:none;}
+    #files { position: absolute; bottom:5px; left:230px; color: #a2a2a2; text-shadow: 1px 1px 0px #000; }
+    a { color: #FFe0a0; text-decoration:none; cursor: pointer}
+    a:visited { color: #FFe0a0; text-decoration:none}
+</style>
+</head>
+
+	<script src="js/three.min.js"></script>
+	<script src="js/Bvh.js"></script>
+	<script src='js/libs/dat.gui.min.js'></script>
+	<script src="js/sea3d.min.js"></script>
+
+	<script>
+		var vsize = { x:100, y:100, z:0 };
+		var mouse = { x:0, y:0 };
+		var lightPos, camPos;
+
+		var inRender = true, inResize = false, isNeedPause = false;
+		var FAR = 2000;
+
+		var ToRad = Math.PI / 180;
+		var ToDeg = 180 / Math.PI;
+
+		var camera, container, scene, renderer, composer, renderPass, delta, center, centerLight, clock;
+		var ambient, hemiLight, pointLight, light;
+		var body, suit, bodyNeck, bodyHead, head, neck, hair, eyeR, eyeL, teethUp, teethDown, eyeTop, tongue, troat, headBase, fakeNeck, eyesTarget;
+	
+		var materials = []; 
+		var clock = new THREE.Clock();
+		var ground;
+
+		var Pool;
+
+		var gui;
+		var animConfig = {
+			current:"none",
+			//neckmove:false, 
+			idle:false,
+			walk:true,
+			salut:false,
+			speed:0.8
+		}
+
+		var viewConfig = {
+			squeleton:false,
+			antialias:false,
+			withEffect:false,
+			withNormal:false,
+			withBump:true
+		};
+
+		var sky;
+		var skyCube;
+
+		var debug;
+
+		var bvhReader = null;
+
+		var displayModel = true;
+		var squeleton;
+		var bonesReference = [];
+
+
+		var SeaStandard = false;
+		var BonesRevers = true;
+
+		function init() {
+
+			out1 = document.getElementById("output1");
+			out2 = document.getElementById("output2");
+
+			vsize.x = window.innerWidth-220;
+			vsize.y = window.innerHeight;
+			vsize.z = vsize.x / vsize.y;
+
+			camPos = { horizontal: 90, vertical: 80, distance: 200, automove: false };
+			lightPos = { horizontal: 135, vertical: 35, distance: 200 };
+            mouse = { ox:0, oy:0, h:0, v:0, mx:0, my:0, down:false, over:false, moving:true, dx:0, dy:0 };
+
+            if(SeaStandard)lightPos.horizontal+=180;
+
+			debug = document.getElementById("debug");
+
+			document.getElementById('files').addEventListener('change', handleFileSelect, false);
+
+			addGUI();
+
+			initScene3D();
+
+			
+		}
+
+		function handleFileSelect(evt) {
+		 	var f = evt.target.files[0];
+		 	var reader = new FileReader();
+		 	reader.onload = (function(theFile) {
+		 		return function(e) {
+		 			bvhReader.parseData(e.target.result.split(/\s+/g));
+		 		};
+		 	})(f);
+		 	reader.readAsText(f);
+		}
+
+		function debugTell(s) {
+			debug.innerHTML = s;
+		}
+
+		function initScene3D() {
+			
+			// RENDERER
+			renderer = new THREE.WebGLRenderer({  antialias: false });
+			renderer.setSize( vsize.x, vsize.y );
+			renderer.autoClear = false;
+			//renderer.sortObjects = false;
+			renderer.gammaInput = true;
+			renderer.gammaOutput = true;
+			renderer.shadowMapEnabled = true;
+			//renderer.shadowMapCullFace = THREE.CullFaceBack;
+			renderer.shadowMapType = THREE.PCFSoftShadowMap;
+
+			container = document.getElementById("viewport");
+            container.appendChild( renderer.domElement );
+			renderer.domElement.style.top = 0 + "px";
+			renderer.domElement.style.left = 220 + "px";
+			renderer.domElement.style.position = "absolute";
+
+			// SCENE
+			scene = new THREE.Scene();
+
+			// CAMERA
+			camera = new THREE.PerspectiveCamera( 45, vsize.z, 1, FAR );
+			//camera.position.set( 0, 30, 100 );
+		    center = new THREE.Vector3(0,30,0);
+		    centerLight =  new THREE.Vector3(0,-45,0);
+		    moveCamera();
+
+		    clock = new THREE.Clock();
+
+
+			addBasicObject();
+
+			initLightAndSky();
+
+			//importBody();
+
+			window.addEventListener( 'resize', resize, false );
+			container.addEventListener( 'mousemove', onMouseMove, false );
+		    container.addEventListener( 'mousedown', onMouseDown, false );
+		    container.addEventListener( 'mouseout', onMouseUp, false );
+		    container.addEventListener( 'mouseup', onMouseUp, false );
+
+		    var body = document.body;
+		    if( body.addEventListener ){
+		        body.addEventListener( 'mousewheel', onMouseWheel, false ); //chrome
+		        body.addEventListener( 'DOMMouseScroll', onMouseWheel, false ); // firefox
+		    }else if( body.attachEvent ){
+		        body.attachEvent("onmousewheel" , onMouseWheel); // ie
+		    }
+		    animate();
+
+		    initBVH();
+
+		    Pool = new SEA3D.Pool('model/onkba.sea', addSea3DModel);
+		}
+
+		//-----------------------------------------------------
+		//
+		//  RENDER LOOP
+		//
+		//-----------------------------------------------------
+
+		function animate() {
+			requestAnimationFrame( animate );
+			render();
+		}
+
+		function render() {
+			updateBVH();
+			updateSEA();
+			renderer.clear();
+			renderer.render( scene, camera );
+		}
+
+		//-----------------------------------------------------
+		//  LISTENER
+		//-----------------------------------------------------
+
+		function resize( event ) {
+			vsize.x = window.innerWidth-220;
+			vsize.y = window.innerHeight;
+			vsize.z = vsize.x / vsize.y;
+			camera.aspect = vsize.z;
+			camera.updateProjectionMatrix();
+			renderer.setSize( vsize.x, vsize.y );
+		}
+
+		//-----------------------------------------------------
+		//  SEA3D
+		//-----------------------------------------------------
+		var body, modelSkeleton;
+		var bones = [];
+		var bonesRef = [];
+
+		function addSea3DModel(){
+			var modelTexture = THREE.ImageUtils.loadTexture( 'img/onkba.jpg' );
+		    modelTexture.wrapS = modelTexture.wrapT = THREE.RepeatWrapping;
+		    modelTexture.anisotropy = renderer.getMaxAnisotropy();
+		    modelTexture.repeat.set( 1, -1 );
+		    modelTexture.offset.set( 1, 1 );
+
+		    var modelMaterial = new THREE.MeshPhongMaterial({ ambient:0x202020, map:modelTexture, specular:0x505050, shininess:60, skinning: true });
+
+		    var modelGeometry = Pool.getGeometry("Body", false);
+
+		    body = new THREE.SkinnedMesh ( modelGeometry, modelMaterial, false );
+			body.scale.set( 1, 1, -1 );
+			scene.add( body );
+
+			modelSkeleton = new THREE.SkeletonHelper( body );
+            modelSkeleton.material.linewidth = 3;
+            body.add( modelSkeleton );
+
+            var BonesRevers = false;
+            var bonesNames = [
+			    "Hips", "LeftUpLeg", "Spine1", "RightUpLeg", "LeftLowLeg",
+			    "RightLowLeg", "Chest", "Chest2", "LeftFoot", "RightFoot",
+			    "LeftCollar", "LeftToe", "RightCollar", "RightToe", "Spine3", 
+			    "LeftUpArm", "Neck", "RightUpArm", "LeftLowArm", "RightLowArm" ,
+			    "Head", "RightLowArm2", "LeftLowArm2", "RightHand", "LeftHand",
+
+			    "FR20", "FL00", "FR10", "FR00", "FL20",
+			    "FL10", "FL20", "FR10", "FR30", "FL30",
+
+			    "FL31", "FR31", "FL11", "FL41", "FR21",
+			    "FR41", "FR01", "FL01", "FL21", "FR11",
+
+			    "FR12", "FR02", "FL42", "FR22", "FL32",
+			    "FL22", "FR32", "FL12", "FL02", "FR42"
+			];
+
+			var bonesNamesRevers = [
+			    "Hips", "RightUpLeg", "Spine1", "LeftUpLeg", "RightLowLeg",
+			    "LeftLowLeg", "Chest", "Chest2", "RightFoot", "LeftFoot",
+			    "RightCollar", "RightToe", "LeftCollar", "LeftToe", "Spine3", 
+			    "RightUpArm", "Neck", "LeftUpArm", "RightLowArm", "LeftLowArm" ,
+			    "Head", "LeftLowArm2", "RightLowArm2", "LeftHand", "RightHand",
+
+			    "FR20", "FL00", "FR10", "FR00", "FL20",
+			    "FL10", "FR20", "FL10", "FL30", "FR30",
+
+			    "FR31", "FL31", "FR11", "FR41", "FL21",
+			    "FL41", "FL01", "FR01", "FR21", "FL11",
+
+			    "FL12", "FL02", "FR42", "FL22", "FR32",
+			    "FR22", "FL32", "FR12", "FR02", "FL42"
+			];
+
+			var bone;
+			for (var i=0, l=body.skeleton.bones.length; i !== l; i++){
+
+				bone = body.skeleton.bones[i];
+				//bone.matrixAutoUpdate = false;
+
+				if(BonesRevers) bone.name = bonesNamesRevers[i];
+				else bone.name = bonesNames[i];
+
+				
+
+				if(i<25){
+					bones[i] = bone;
+					bonesRef[i] = { name:bone.name, pos:bone.position, quat:bone.quaternion, scale:bone.scale }
+				}
+			}
+
+			/*var animation = new THREE.Animation( body, "Body/root" );
+			animation.play();*/
+
+			moveBones();
+		}
+
+		function moveBones(){
+			var bone;
+			var i = bones.length;
+			while(i--){
+				bone = bones[i];
+				if(i==2) bone.rotation.set(0, -40*ToRad, 0);
+
+				//bone.updateMatrix();
+			}
+			body.updateMatrixWorld( true );
+			modelSkeleton.update();
+		}
+
+		function updateSEA(){
+			var delta = clock.getDelta();
+			THREE.AnimationHandler.update( delta );
+		}
+
+		//-----------------------------------------------------
+		//  LIGHT & SKY
+		//-----------------------------------------------------
+
+		function initLightAndSky(){
+
+			ambient = new THREE.AmbientLight( 0x202020 );
+			scene.add( ambient );
+
+			hemiLight = new THREE.HemisphereLight( 0x202020, 0xffffff, 1 );
+			hemiLight.position.set( 0, 20, 0 );
+			scene.add( hemiLight );
+
+			pointLight = new THREE.PointLight( 0xFFFFFF, 1, 600 );
+			scene.add( pointLight );
+
+			light = new THREE.SpotLight( 0xFFFFFF, 1, 0, Math.PI/2, 1 );
+			light.castShadow = true;
+			light.onlyShadow = false;
+			light.shadowCameraNear = 50;
+			light.shadowCameraFar = 500;
+			//light.shadowCameraFov = 35;
+			light.shadowBias = -0.005;
+			light.shadowMapWidth = light.shadowMapHeight = 1024;
+			light.shadowDarkness = 0.35;
+
+			moveLight();
+			
+			//light.shadowCameraVisible = true; 
+
+			scene.add( light );
+		}	
+
+		function moveLight() {
+		    light.position.copy(Orbit(centerLight, lightPos.horizontal, lightPos.vertical, lightPos.distance));
+		    pointLight.position.copy(Orbit(centerLight, lightPos.horizontal+180, lightPos.vertical+180, lightPos.distance));
+		    light.lookAt(centerLight);
+		}
+		
+		function lightColors( cc ){
+			ambient.color.setHex(cc[2]);
+
+			hemiLight.color.setHex( cc[2] );
+			hemiLight.groundColor.setHex( cc[0] );
+
+			pointLight.color.setHex( cc[1] );
+
+			light.color.setHex( cc[3] );
+
+			currentColors = cc;
+		}
+
+		function addBasicObject() {
+			var skyMaterial = new THREE.MeshBasicMaterial( { color: 0x303030, side: THREE.BackSide, depthWrite: false } );
+		    sky = new THREE.Mesh( new THREE.BoxGeometry( FAR, FAR, FAR ), skyMaterial );
+			scene.add( sky );
+
+			var groundMaterial = new THREE.MeshBasicMaterial( { color: 0xFFFFFF, transparent: true } );
+			var blendings = [ "NoBlending", "NormalBlending", "AdditiveBlending", "SubtractiveBlending", "MultiplyBlending", "AdditiveAlphaBlending" ];
+			groundMaterial.blending = THREE[ blendings[ 4 ] ];
+			ground = new THREE.Mesh(new THREE.PlaneGeometry( 1000, 1000, 4, 4 ), groundMaterial);
+			ground.position.set( 0, 0, 0 );
+			ground.rotation.x = - Math.PI / 2;
+			ground.receiveShadow = true;
+			scene.add( ground );
+
+			var helper2 = new THREE.GridHelper( 100, 50 );
+			helper2.setColors( 0x00ff00, 0x888888 );
+			scene.add( helper2 );
+		}
+
+		//-----------------------------------------------------
+		//  BVH TEST
+		//-----------------------------------------------------
+
+		var BVHset = {ax:"x", ay:"y", az:"z", dx:1, dy:1, dz:1, rx:0, ry:0, rz:0, order:"XYZ"};
+		var BVHanimConfig = {
+			debug:true,
+			speed:0.25,
+			size:1,
+			px:0, py:0, pz:0,
+			boneSize:1.5
+		}
+
+		function initBVH() {
+			bvhReader = new BVH.Reader();
+			bvhReader.speed = BVHanimConfig.speed;
+
+			loadBVH("action.png");
+
+			initBVHGui();
+
+		}
+
+		function loadBVH(name) {
+			 bvhReader.load("bvh/"+name);
+		}
+
+		function initBVHGui() {
+			
+
+			var f5 = gui.addFolder('BVH PLAYER');
+
+			BVHanimConfig.calibration = function() { loadBVH("calibration.png"); };
+            BVHanimConfig.ballet = function() { loadBVH("ballet.png"); };
+            BVHanimConfig.shoot = function() { loadBVH("shoot.png"); };
+            BVHanimConfig.sprint = function() { loadBVH("sprint.png"); };
+            BVHanimConfig.exsize = function() { loadBVH("exsize.png"); };
+            BVHanimConfig.test = function() { loadBVH("test.png"); };
+            BVHanimConfig.big = function() { loadBVH("big.png"); };
+
+            BVHanimConfig.c11A = function() { loadBVH("c11A.png"); };
+            BVHanimConfig.c11B = function() { loadBVH("c11B.png"); };
+
+            BVHanimConfig.story = function() { loadBVH("story.png"); };
+            BVHanimConfig.action = function() { loadBVH("action.png"); };
+
+            BVHanimConfig.dance = function() { loadBVH("dance.png"); };
+
+            BVHanimConfig.stop = function() {  bvhReader.play = false; };
+            BVHanimConfig.play = function() { bvhReader.oldFrame = bvhReader.frame; bvhReader.startTime = Date.now(); bvhReader.play = true; };
+            BVHanimConfig.next = function() { bvhReader.next(); };
+            BVHanimConfig.prev = function() { bvhReader.prev(); };
+
+
+            f5.add( BVHanimConfig, 'calibration' );
+            f5.add( BVHanimConfig, 'ballet' );
+            f5.add( BVHanimConfig, 'shoot' );
+            f5.add( BVHanimConfig, 'sprint' );
+            f5.add( BVHanimConfig, 'exsize' );
+            f5.add( BVHanimConfig, 'test' );
+            f5.add( BVHanimConfig, 'big' );
+
+            f5.add( BVHanimConfig, 'c11A' );
+            f5.add( BVHanimConfig, 'c11B' );
+
+            f5.add( BVHanimConfig, 'story' );
+            f5.add( BVHanimConfig, 'action' );
+
+             f5.add( BVHanimConfig, 'dance' );
+
+            var f6 = gui.addFolder('BVH CONTROL');
+
+            f6.add( BVHanimConfig, 'speed', 0.1, 1 ).onChange( function() { bvhReader.speed = BVHanimConfig.speed; });;
+
+            f6.add( BVHanimConfig, 'stop' );
+            f6.add( BVHanimConfig, 'play' );
+            f6.add( BVHanimConfig, 'next' );
+            f6.add( BVHanimConfig, 'prev' );
+
+            var f7 = gui.addFolder('BVH OPTION');
+
+            f7.add( BVHanimConfig, 'size', 1, 5 ).onChange( function() { bvhReader.reScale(BVHanimConfig.size) });
+            f7.add( BVHanimConfig, 'px', -100, 100 ).onChange( function() { positionBVH() });;
+            f7.add( BVHanimConfig, 'py', -100, 100 ).onChange( function() { positionBVH() });;
+            f7.add( BVHanimConfig, 'pz', -100, 100 ).onChange( function() { positionBVH() });;
+
+            f7.add( BVHanimConfig, 'boneSize', 0.5, 5 ).onChange( function() { bvhReader.boneSize = BVHanimConfig.boneSize; });
+
+			f5.open();
+			f6.open();
+		}
+
+		function positionBVH() {
+			bvhReader.rePosition(new THREE.Vector3( BVHanimConfig.px || 0, BVHanimConfig.py|| 0, BVHanimConfig.pz|| 0 ))
+		}
+
+		function updateBVH() {
+			if(bvhReader !== null && bvhReader.play){
+				bvhReader.update();
+			}
+		}
+ 
+		function toAngles(o) {
+			var q = o.quaternion.clone();
+			var x = q.x, 
+				y = q.y, 
+				z = q.z, 
+				w = q.w;
+			
+			var a = 2 * (w * y - z * x);
+			
+			if (a < -1) a = -1;
+			else if (a > 1) a = 1; 
+			
+			return {
+				x : Math.atan2(2 * (w * x + y * z), 1 - 2 * (x * x + y * y)) * 1,
+				y : Math.asin(a) * 1,
+				z : Math.atan2(2 * (w * z + x * y), 1 - 2 * (y * y + z * z)) * 1
+			}
+		}
+
+		function traceMatrix(o, n) {
+				var e = o.matrix.elements
+				var s = o.name+"<br>";
+				var q = o.quaternion.clone();
+				//s+=( q.x ).toFixed(2)+ "_"+ ( q.y ).toFixed(2) +  "_"+ (q.z).toFixed(2)+ "_"+  (q.w).toFixed(2);
+				//s+=( b.rot.x * ToDeg ).toFixed(2)+ "_"+ ( b.rot.y * ToDeg ).toFixed(2) +  "_"+ ( b.rot.z * ToDeg ).toFixed(2);
+
+				//s+= "<br>"
+
+				s += ( o.rotation.x * ToDeg ).toFixed(2)+ "_"+ ( o.rotation.y * ToDeg ).toFixed(2) +  "_"+ ( o.rotation.z * ToDeg ).toFixed(2)+ "_"+ o.rotation.order;
+
+				s += "<br>"
+
+				s += "_"+ e[0].toFixed(2) + "_" + e[1].toFixed(2) + "_"+ e[2].toFixed(2) + "_" + e[3] + "<br>";
+				s += "_"+ e[4].toFixed(2) + "_" + e[5].toFixed(2) + "_"+ e[6].toFixed(2) + "_" + e[7] + "<br>";
+				s += "_"+ e[8].toFixed(2) + "_" + e[9].toFixed(2) + "_"+ e[10].toFixed(2) + "_" + e[11] + "<br>";
+				s += "_"+ e[12] + "_" + e[13] + "_"+ e[14] + "_" + e[15] + "<br>";
+				
+				if(n===1) out1.innerHTML = s;
+				else out2.innerHTML = s;
+			}
+
+
+
+		//-----------------------------------------------------
+		//  GUI
+		//-----------------------------------------------------
+
+		function addGUI() {
+			gui = new dat.GUI({autoPlace:false, width:204});
+			document.getElementById('gui').appendChild(gui.domElement);
+		}
+		
+		function tell(s){
+			document.getElementById("debug").innerHTML = s;
+		}
+
+		
+
+		//-----------------------------------
+		// MATH
+		//-----------------------------------
+
+		function Orbit(origine, horizontal, vertical, distance) {
+		    var p = new THREE.Vector3();
+		    var phi = vertical*ToRad;
+		    var theta = horizontal*ToRad;
+		    p.x = (distance * Math.sin(phi) * Math.cos(theta)) + origine.x;
+		    p.z = (distance * Math.sin(phi) * Math.sin(theta)) + origine.z;
+		    p.y = (distance * Math.cos(phi)) + origine.y;
+		    return p;
+		}
+
+		//-----------------------------------
+		// MOUSE & NAVIGATION 
+		//-----------------------------------
+
+		var changeView = function (h, v, d) {
+			TweenLite.to(camPos, 3, {horizontal: h, vertical: v, distance: d, onUpdate: moveCamera });
+			camPos.automove = true;
+		}
+
+		function moveCamera() {
+		    camera.position.copy(Orbit(center, camPos.horizontal, camPos.vertical, camPos.distance));
+		    camera.lookAt(center);
+		}
+
+		function onMouseDown(e) {
+		    e.preventDefault();
+		    mouse.ox = e.clientX;
+		    mouse.oy = e.clientY;
+		    mouse.h = camPos.horizontal;
+		    mouse.v = camPos.vertical;
+		    mouse.down = true;
+		}
+
+		function onMouseUp(e) {
+		    mouse.down = false;
+		    document.body.style.cursor = 'auto';
+		}
+
+		function onMouseMove(e) {
+		    e.preventDefault();
+		    if (mouse.down ) {
+		        document.body.style.cursor = 'move';
+		        if(SeaStandard)camPos.horizontal = (-(e.clientX - mouse.ox) * 0.3) + mouse.h;
+		        else camPos.horizontal = ((e.clientX - mouse.ox) * 0.3) + mouse.h;
+		        camPos.vertical = (-(e.clientY - mouse.oy) * 0.3) + mouse.v;
+
+		        moveCamera();
+		    } else {
+		    	mouse.ox = e.clientX;
+			    mouse.oy = e.clientY;
+		    }
+		}
+
+		function onMouseWheel(e) {
+		    var delta = 0;
+		    if(e.wheelDelta){delta=e.wheelDelta*-1;}
+		    else if(e.detail){delta=e.detail*20;}
+		    camPos.distance+=(delta/10);
+
+		    moveCamera();   
+		    e.preventDefault();
+		}
+
+	window.onload = init;
+
+	</script>
+
+	<body>
+		<div id="viewport"></div>
+		<div id="hubs">
+			<div id="debug"></div>
+			<div id="guiContener"><div id="gui"></div></div>
+			<div id="copy">
+				BVH player <a href="http://3dflashlo.wordpress.com/" target="_blank">&nbsp;&nbsp;&nbsp;loth 2014&nbsp;&nbsp;&nbsp;</a>
+			</div>
+			<input type="file" id="files" />
+		</div>
+		<div id="BVHhubs"></div>
+		<div id="output1"></div>
+		<div id="output2"></div>
+	</body>
+</html>

@@ -34,6 +34,7 @@
 <script id="workerRvo" type="javascript/worker">
 var simulator = null;
 var perf = "";
+var ToRad = Math.PI / 180;
 var target01;
 var target02;
 var goals = [];
@@ -41,6 +42,7 @@ var goals = [];
 self.onmessage = function(e) {
 
     var rvoMatrixs = e.data.rvoMatrixs;
+
     //var clock, newTime=0, oldTime=0
 
     var N = e.data.N;
@@ -78,7 +80,7 @@ self.onmessage = function(e) {
 
             ag = simulator.agents_[i];
             p = simulator.getAgentPosition(i);
-            r = simulator.getAgentOrientation(i);
+            r = simulator.getAgentOrientation(i);//*ToRad;
 
             
             goalVector = goals[i].moins( p );
@@ -277,7 +279,7 @@ workerRvo.onmessage = function(e) {
     while(i--){
         rvoMeshes[i].position.x = rvoMatrixs[6*i + 0];
         rvoMeshes[i].position.z = rvoMatrixs[6*i + 1];
-        rvoMeshes[i].rotation.y = (rvoMatrixs[6*i + 2])*ToRad;
+        rvoMeshes[i].rotation.y = rvoMatrixs[6*i + 2];//*ToRad;
 
         rvoVel[(3*i) + 0 ] = rvoMatrixs[6*i + 3];
         rvoVel[(3*i) + 1 ] = rvoMatrixs[6*i + 4];
@@ -333,7 +335,7 @@ function init() {
     // camera
     camera = new THREE.PerspectiveCamera( 30, window.innerWidth / window.innerHeight, 0.5, 10000 );
     camera.position.set( 0, 30, 100 );
-    center = new THREE.Vector3();
+    center = new THREE.Vector3(0,0.5,0);
     moveCamera();
 
     scene.add( camera );
@@ -431,7 +433,10 @@ function init() {
 
     loop();
 
-    ModelName = 'Spider';
+    var modelsType = ['Spider', 'Rat', 'Panthere'];
+    var n = Math.round(Math.random()*3)-1;
+
+    ModelName = modelsType[0];
     Pool = new SEA3D.Pool('model/'+ModelName+'.sea', populate);
 }
 
@@ -460,6 +465,7 @@ function populate(){
 
         m = new THREE.SkinnedMesh(model, mat, false );
         m.scale.set(0.03,0.03,-0.03);
+        m.position.y =1;
 
         //m.castShadow = true;
         //m.receiveShadow = true;
