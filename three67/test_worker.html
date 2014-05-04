@@ -382,8 +382,8 @@ function init() {
 
     var sphereMaterial = new THREE.MeshPhongMaterial( { color: 0x8888CC } );
 
-    var planeMaterial01 = new THREE.MeshPhongMaterial( { color: 0xCC8888 - 0x444444, transparent:true, opacity:0.1 } );
-    var planeMaterial02 = new THREE.MeshPhongMaterial( { color: 0x88CC88 - 0x444444, transparent:true, opacity:0.1 } );
+    var planeMaterial01 = new THREE.MeshBasicMaterial( { color: 0x403030 } );
+    var planeMaterial02 = new THREE.MeshBasicMaterial( { color: 0x304030 } );
 
     geometry = THREE.BufferGeometryUtils.fromGeometry( new THREE.PlaneGeometry( 400, 400, 1, 1 ) );
     
@@ -395,13 +395,14 @@ function init() {
        
     // geometry
     var cubeGeo = THREE.BufferGeometryUtils.fromGeometry(new THREE.BoxGeometry( 0.5,  1,  0.25, 1, 1, 1));
-    var sphereGeo = THREE.BufferGeometryUtils.fromGeometry(new THREE.SphereGeometry( 0.25, 12, 8));
+    var sphereGeo = THREE.BufferGeometryUtils.fromGeometry(new THREE.SphereGeometry( 0.5, 12, 8));
     var planeGeo = THREE.BufferGeometryUtils.fromGeometry(new THREE.PlaneGeometry( 0.5, 0.25, 1, 1));
     planeGeo.applyMatrix(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
 
     for(var i=0; i<N*0.5; i++){
-        if(i<N*0.25) mesh = new THREE.Mesh( cubeGeo, cubeMaterial01 );
-        else mesh = new THREE.Mesh( cubeGeo, cubeMaterial02 );
+       // if(i<N*0.25) mesh = new THREE.Mesh( cubeGeo, cubeMaterial01 );
+       // else mesh = new THREE.Mesh( cubeGeo, cubeMaterial02 );
+        mesh = new THREE.Object3D();
         //mesh.castShadow = true;
         oimoMeshes.push(mesh);
         scene.add( mesh );
@@ -483,37 +484,28 @@ function displayInfo(){
 //-----------------------------------
 
 function populate() {
-    var avatarTexture = THREE.ImageUtils.loadTexture( 'res/texture/avatar.jpg' );
+    var avatarTexture = THREE.ImageUtils.loadTexture( 'res/texture/avatar3.jpg' );
     avatarTexture.wrapS = avatarTexture.wrapT = THREE.RepeatWrapping;
     avatarTexture.anisotropy = renderer.getMaxAnisotropy();
     avatarTexture.repeat.set( 1, -1 );
-    //avatarTexture.offset.set( 1, 1 );
-    var avatarTexture2 = THREE.ImageUtils.loadTexture( 'res/texture/avatar2.jpg' );
-    avatarTexture2.wrapS = avatarTexture2.wrapT = THREE.RepeatWrapping;
-    avatarTexture2.anisotropy = renderer.getMaxAnisotropy();
-    avatarTexture2.repeat.set( 1, -1 );
-    //avatarTexture2.offset.set( 1, 1 );
 
-    var mat0 = new THREE.MeshPhongMaterial({ map:avatarTexture, ambient: 0x202020, specular: 0x303030, shininess: 30, skinning: true });
-    var mat1 = new THREE.MeshPhongMaterial({ map:avatarTexture2, ambient: 0x202020, specular: 0x303030, shininess: 30, skinning: true });
+    var mat = new THREE.MeshPhongMaterial({ map:avatarTexture, ambient: 0x202020, specular: 0x303030, shininess: 30, skinning: true });
 
-    var models = ["hero_1_warrior", "hero_2_valkyrie", "hero_3_wizard", "hero_4_elf"];
-    var materials = [mat0, mat0, mat1, mat1];
+    var models = ["monster_nurce", "monster_zombi"];
 
     var h0 = pool.getGeometry(models[0]);
     var h1 = pool.getGeometry(models[1]);
-    var h2 = pool.getGeometry(models[2]);
-    var h3 = pool.getGeometry(models[3]);
-    var modelsGeo = [h0, h1, h2, h3];
+    var modelsGeo = [h0, h1];
 
     var m, n, anim, s;
     for(var i=0; i<N*0.5; i++){
         if(i<N*0.25)n=0;
         else n=1;
         s = 0.025;
-        m = new THREE.SkinnedMesh( modelsGeo[n], materials[n], false );
+        m = new THREE.SkinnedMesh( modelsGeo[n], mat, false );
         m.scale.set(s,s,-s);
         m.rotation.y = 180*ToRad;
+        m.position.y =0.1;
         m.castShadow = true;
 
         anim = models[n]+"/walk";

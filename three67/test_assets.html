@@ -123,7 +123,7 @@ function init() {
     scene.add( mesh );
        
 
-    Pool = new SEA3D.Pool('res/model/g2.sea', populate);
+    Pool = new SEA3D.Pool('res/model/g3.sea', populate);
 
 
     var body = document.body;
@@ -198,23 +198,25 @@ function populate(){
     var mat6 = new THREE.MeshPhongMaterial({ ambient: 0x202020, color: 0x202020, specular: 0x303030, shininess: 120 });
     
     
-    var models = ["hero_1_warrior", "hero_2_valkyrie", "hero_3_wizard", "hero_4_elf", "monster_2_b7"];
+    var models = ["hero_1_warrior", "hero_2_valkyrie", "hero_3_wizard", "hero_4_elf", "monster_dog", "monster_chicken"];
    
-    var materials = [mat3, mat3, mat4, mat4, mat5];
+    var materials = [mat3, mat3, mat4, mat4, mat5, mat5];
 
     var h0 = Pool.getGeometry(models[0]);
     var h1 = Pool.getGeometry(models[1]);
     var h2 = Pool.getGeometry(models[2]);
     var h3 = Pool.getGeometry(models[3]);
     var h4 = Pool.getGeometry(models[4]);
+    var h5 = Pool.getGeometry(models[5]);
+
 
     var w0 = THREE.BufferGeometryUtils.fromGeometry(Pool.getGeometry("weapon0"));
     var w1 = THREE.BufferGeometryUtils.fromGeometry(Pool.getGeometry("weapon1"));
     var w2 = THREE.BufferGeometryUtils.fromGeometry(Pool.getGeometry("weapon2"));
     var w3 = THREE.BufferGeometryUtils.fromGeometry(Pool.getGeometry("weapon3"));
 
-    var modelsGeo = [h0, h1, h2, h3, h4];
-    var weapons = [w0, w1, w2, w3, null];
+    var modelsGeo = [h0, h1, h2, h3, h4, h5];
+    var weapons = [w0, w1, w2, w3, null, null];
 
     var i, rx, rz, m, w;
 
@@ -225,7 +227,7 @@ function populate(){
     
 
     for(i=0; i<num; i++){
-        rand = Math.floor(Math.random()*5);
+        rand = Math.floor(Math.random()*6);
         rx =  -50+(Math.random()*100);
         rz =  -50+(Math.random()*100);
 
@@ -253,7 +255,10 @@ function populate(){
 
         m.position.x = -rx;
         if(rand!==4)m.position.y = 5.5;
+         
         else m.position.y = 1;
+
+        if(rand==5)m.position.y = 1.5;
         m.position.z = -rz;
 
        // m.position.copy( Orbit(center,rz,rx, 105));
