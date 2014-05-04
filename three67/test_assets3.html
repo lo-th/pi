@@ -56,13 +56,21 @@ self.onmessage = function(e) {
         simulator.setTimeStep(e.data.step || 0.25);
         target01 = new RVO.Vector2( 0, 0 );
         target02 = new RVO.Vector2( 0, 0 );
-        simulator.setAgentDefaults(15, 10, 10, 10, 0.5, 0.5);
+        simulator.setAgentDefaults(15, 10, 10, 0, 0.4, 0.3);
+
+        var obstacle4 = [];
+        obstacle4.push(new RVO.Vector2(2, -2));
+        obstacle4.push(new RVO.Vector2(2, 2));
+        obstacle4.push(new RVO.Vector2(-2, 2));
+        obstacle4.push(new RVO.Vector2(-2, -2));
+        simulator.addObstacle(obstacle4);
+        simulator.processObstacles();
 
         for(var i=0; i!==N; i++){
-            var c = 0;
+           
             var v = new RVO.Vector2(Math.cos(i * 2 * Math.PI / N), Math.sin(i * 2 * Math.PI / N));
             simulator.addAgent(v.mul_k(50));
-           // simulator.setAgentMaxSpeed(c, .5 + Math.random() * 1);
+            simulator.setAgentMaxSpeed(i, .1 + Math.random() * 0.3);
         }
     } else { // loop
         var p, r, goalVector, ag;
@@ -274,12 +282,15 @@ function sendDataToOimoWorker(url){
 workerRvo.onmessage = function(e) {
     // Get fresh data from the worker
     rvoMatrixs = e.data.rvoMatrixs;
-
+    var q;
     i = Nagent;
     while(i--){
         rvoMeshes[i].position.x = rvoMatrixs[6*i + 0];
         rvoMeshes[i].position.z = rvoMatrixs[6*i + 1];
-        rvoMeshes[i].rotation.y = rvoMatrixs[6*i + 2]+(180*ToRad);
+        q = new THREE.Quaternion();
+        q.setFromAxisAngle(new THREE.Vector3(0,1,0),rvoMatrixs[6*i + 2]+(180*ToRad) );
+        rvoMeshes[i].quaternion.slerp(q,0.1);
+        //rvoMeshes[i].rotation.y = rvoMatrixs[6*i + 2]+(180*ToRad);
 
         rvoVel[(3*i) + 0 ] = rvoMatrixs[6*i + 3];
         rvoVel[(3*i) + 1 ] = rvoMatrixs[6*i + 4];
@@ -434,20 +445,24 @@ function init() {
     loop();
 
     var modelsType = ['Spider', 'Rat', 'Panthere'];
-    var n = Math.round(Math.random()*3)-1;
+    var n = Math.round(Math.random()*2);
+    console.log(n)
 
-    ModelName = modelsType[0];
+    ModelName = modelsType[n];
     Pool = new SEA3D.Pool('model/'+ModelName+'.sea', populate);
 }
 
 function populate(){
+    var s= 0.02;
+    if(ModelName == "Spider") s = 0.02;
+    else if(ModelName == "Rat") s = 0.05;
     var dTexture = THREE.ImageUtils.loadTexture( 'img/'+ModelName+'.jpg' );
     dTexture.wrapS = dTexture.wrapT = THREE.RepeatWrapping;
     dTexture.anisotropy = renderer.getMaxAnisotropy();
     dTexture.repeat.set( 1, -1 );
-    dTexture.offset.set( 1, 1 );
+    //dTexture.offset.set( 1, 1 );
 
-    var mat = new THREE.MeshPhongMaterial({ ambient: 0x202020, map: dTexture, specular: 0x505050, shininess: 60, skinning: true });
+    var mat = new THREE.MeshPhongMaterial({ ambient: 0x202020, map: dTexture, specular: 0x505050, shininess: 20, skinning: true });
 
     var model = Pool.getGeometry(ModelName);
 
@@ -464,7 +479,7 @@ function populate(){
     for(i=0; i<Nagent; i++){
 
         m = new THREE.SkinnedMesh(model, mat, false );
-        m.scale.set(0.03,0.03,-0.03);
+        m.scale.set(s,s,-s);
         m.position.y =1;
 
         //m.castShadow = true;
