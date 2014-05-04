@@ -194,9 +194,10 @@ var info = document.getElementById("info");
 var sourceInfo = "";
 
 // THREE var
-var container, camera, scene, renderer, camPos, mouse;;
+var container, camera, scene, renderer, clock, camPos, mouse;
 var oimoMeshes=[]
 var rvoMeshes=[];
+var pool;
 
 var fps=0, time, time_prev=0, fpsint = 0;
 var bgcolor = 0x383838;
@@ -319,6 +320,8 @@ function init() {
     camPos = { horizontal: 90, vertical: 75, distance: 125, automove: false };
     mouse = { ox:0, oy:0, h:0, v:0, mx:0, my:0, down:false, over:false, moving:true };
 
+    clock = new THREE.Clock();
+
     renderer = new THREE.WebGLRenderer( {precision: "lowp", antialias: false } );
     renderer.setSize( window.innerWidth, window.innerHeight );
     renderer.setClearColor( bgcolor, 1 );
@@ -374,13 +377,13 @@ function init() {
     scene.add( backGeo );
 
     var material = new THREE.MeshBasicMaterial( { color: bgcolor } );
-    var cubeMaterial01 = new THREE.MeshPhongMaterial( { color: 0xCC8888 } );
-    var cubeMaterial02 = new THREE.MeshPhongMaterial( { color: 0x88CC88 } );
+    var cubeMaterial01 = new THREE.MeshBasicMaterial( { color: 0xCC8888, transparent:true, opacity:0.1 } );
+    var cubeMaterial02 = new THREE.MeshBasicMaterial( { color: 0x88CC88, transparent:true, opacity:0.1  } );
 
     var sphereMaterial = new THREE.MeshPhongMaterial( { color: 0x8888CC } );
 
-    var planeMaterial01 = new THREE.MeshPhongMaterial( { color: 0xCC8888 - 0x444444 } );
-    var planeMaterial02 = new THREE.MeshPhongMaterial( { color: 0x88CC88 - 0x444444 } );
+    var planeMaterial01 = new THREE.MeshPhongMaterial( { color: 0xCC8888 - 0x444444, transparent:true, opacity:0.1 } );
+    var planeMaterial02 = new THREE.MeshPhongMaterial( { color: 0x88CC88 - 0x444444, transparent:true, opacity:0.1 } );
 
     geometry = THREE.BufferGeometryUtils.fromGeometry( new THREE.PlaneGeometry( 400, 400, 1, 1 ) );
     
@@ -399,7 +402,7 @@ function init() {
     for(var i=0; i<N*0.5; i++){
         if(i<N*0.25) mesh = new THREE.Mesh( cubeGeo, cubeMaterial01 );
         else mesh = new THREE.Mesh( cubeGeo, cubeMaterial02 );
-        mesh.castShadow = true;
+        //mesh.castShadow = true;
         oimoMeshes.push(mesh);
         scene.add( mesh );
     }
@@ -435,6 +438,7 @@ function init() {
     }
 
 
+    pool = new SEA3D.Pool('res/model/g2.sea', populate);
     loop();
     initRvoWorker();
 }
@@ -445,8 +449,15 @@ function resize() {
     camera.updateProjectionMatrix();
 }
 
+var nloop = 0;
 function loop() {
     requestAnimationFrame( loop );
+    var delta = clock.getDelta();
+    nloop++
+    if(nloop===2){
+        nloop = 0;
+        THREE.AnimationHandler.update( delta*2 );
+    }
     renderer.render( scene, camera );
     displayInfo();
 }
@@ -465,6 +476,55 @@ function displayInfo(){
         "Three Render: " + fpsint +" fps<br>"
     ].join("\n");
     document.getElementById("info").innerHTML = info;
+}
+
+//-----------------------------------
+// SEA3D MODEL
+//-----------------------------------
+
+function populate() {
+    var avatarTexture = THREE.ImageUtils.loadTexture( 'res/texture/avatar.jpg' );
+    avatarTexture.wrapS = avatarTexture.wrapT = THREE.RepeatWrapping;
+    avatarTexture.anisotropy = renderer.getMaxAnisotropy();
+    avatarTexture.repeat.set( 1, -1 );
+    //avatarTexture.offset.set( 1, 1 );
+    var avatarTexture2 = THREE.ImageUtils.loadTexture( 'res/texture/avatar2.jpg' );
+    avatarTexture2.wrapS = avatarTexture2.wrapT = THREE.RepeatWrapping;
+    avatarTexture2.anisotropy = renderer.getMaxAnisotropy();
+    avatarTexture2.repeat.set( 1, -1 );
+    //avatarTexture2.offset.set( 1, 1 );
+
+    var mat0 = new THREE.MeshPhongMaterial({ map:avatarTexture, ambient: 0x202020, specular: 0x303030, shininess: 30, skinning: true });
+    var mat1 = new THREE.MeshPhongMaterial({ map:avatarTexture2, ambient: 0x202020, specular: 0x303030, shininess: 30, skinning: true });
+
+    var models = ["hero_1_warrior", "hero_2_valkyrie", "hero_3_wizard", "hero_4_elf"];
+    var materials = [mat0, mat0, mat1, mat1];
+
+    var h0 = pool.getGeometry(models[0]);
+    var h1 = pool.getGeometry(models[1]);
+    var h2 = pool.getGeometry(models[2]);
+    var h3 = pool.getGeometry(models[3]);
+    var modelsGeo = [h0, h1, h2, h3];
+
+    var m, n, anim, s;
+    for(var i=0; i<N*0.5; i++){
+        if(i<N*0.25)n=0;
+        else n=1;
+        s = 0.025;
+        m = new THREE.SkinnedMesh( modelsGeo[n], materials[n], false );
+        m.scale.set(s,s,-s);
+        m.rotation.y = 180*ToRad;
+        m.castShadow = true;
+
+        anim = models[n]+"/walk";
+
+        var animation = new THREE.Animation( m, anim );
+        animation.play( 0.05 * Math.random() );
+        oimoMeshes[i].add(m);
+    }
+
+
+
 }
 
 //-----------------------------------
