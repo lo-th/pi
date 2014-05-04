@@ -12,12 +12,10 @@
     #info{ pointer-events:none; position: absolute; left:10px; top:10px; width: 400px; height: 400px; }
 </style>
 
-<script src="js/three.min.js"></script>
-<script src="js/sea3d.min.js"></script>
+<script src="build/three.min.js"></script>
+<script src="build/sea3d.min.js"></script>
 <script src="js/Detector.js"></script>
 <script src="js/BufferGeometryUtils.js"></script>
-
-<script src="js/rvo.min.js"></script>
 
 </head>
 <body>
@@ -446,17 +444,17 @@ function init() {
 
     var modelsType = ['Spider', 'Rat', 'Panthere'];
     var n = Math.round(Math.random()*2);
-    console.log(n)
+    //console.log(n)
 
     ModelName = modelsType[n];
-    Pool = new SEA3D.Pool('model/'+ModelName+'.sea', populate);
+    Pool = new SEA3D.Pool('res/model/'+ModelName+'.sea', populate);
 }
 
 function populate(){
     var s= 0.02;
     if(ModelName == "Spider") s = 0.02;
     else if(ModelName == "Rat") s = 0.05;
-    var dTexture = THREE.ImageUtils.loadTexture( 'img/'+ModelName+'.jpg' );
+    var dTexture = THREE.ImageUtils.loadTexture( 'res/texture/'+ModelName+'.jpg' );
     dTexture.wrapS = dTexture.wrapT = THREE.RepeatWrapping;
     dTexture.anisotropy = renderer.getMaxAnisotropy();
     dTexture.repeat.set( 1, -1 );
@@ -502,7 +500,7 @@ function populate(){
 
 function startWorkers(){
    // sendDataToOimoWorker(document.location.href.replace(/\/[^/]*$/,"/") + "js/oimo.min.js");
-    sendDataToRvoWorker(document.location.href.replace(/\/[^/]*$/,"/") + "js/rvo.min.js");
+    sendDataToRvoWorker(document.location.href.replace(/\/[^/]*$/,"/") + "build/rvo.min.js");
 }
 
 function resize() {

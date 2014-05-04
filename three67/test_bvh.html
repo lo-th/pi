@@ -25,10 +25,11 @@
 </style>
 </head>
 
-	<script src="js/three.min.js"></script>
+	<script src="build/three.min.js"></script>
+	<script src="build/sea3d.min.js"></script>
 	<script src="js/Bvh.js"></script>
 	<script src='js/libs/dat.gui.min.js'></script>
-	<script src="js/sea3d.min.js"></script>
+	
 
 	<script>
 		var vsize = { x:100, y:100, z:0 };
@@ -180,7 +181,7 @@
 
 		    initBVH();
 
-		    Pool = new SEA3D.Pool('model/onkba.sea', addSea3DModel);
+		    Pool = new SEA3D.Pool('res/model/onkba.sea', addSea3DModel);
 		}
 
 		//-----------------------------------------------------
@@ -222,7 +223,7 @@
 		var bonesRef = [];
 
 		function addSea3DModel(){
-			var modelTexture = THREE.ImageUtils.loadTexture( 'img/onkba.jpg' );
+			var modelTexture = THREE.ImageUtils.loadTexture( 'res/texture/onkba.jpg' );
 		    modelTexture.wrapS = modelTexture.wrapT = THREE.RepeatWrapping;
 		    modelTexture.anisotropy = renderer.getMaxAnisotropy();
 		    modelTexture.repeat.set( 1, -1 );

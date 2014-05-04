@@ -12,8 +12,8 @@
     #info{ pointer-events:none; position: absolute; left:10px; top:10px; width: 400px; height: 400px; }
 </style>
 
-<script src="js/three.min.js"></script>
-<script src="js/sea3d.min.js"></script>
+<script src="build/three.min.js"></script>
+<script src="build/sea3d.min.js"></script>
 <script src="js/Detector.js"></script>
 <script src="js/BufferGeometryUtils.js"></script>
 <script src="js/libs/stats.min.js"></script>
@@ -123,7 +123,7 @@ function init() {
     scene.add( mesh );
        
 
-    Pool = new SEA3D.Pool('model/g2.sea', populate);
+    Pool = new SEA3D.Pool('res/model/g2.sea', populate);
 
 
     var body = document.body;
@@ -181,12 +181,12 @@ function loop() {
 
 function populate(){
 
-    var avatarTexture = THREE.ImageUtils.loadTexture( 'img/avatar.jpg' );
+    var avatarTexture = THREE.ImageUtils.loadTexture( 'res/texture/avatar.jpg' );
     avatarTexture.wrapS = avatarTexture.wrapT = THREE.RepeatWrapping;
     avatarTexture.anisotropy = renderer.getMaxAnisotropy();
     avatarTexture.repeat.set( 1, -1 );
     avatarTexture.offset.set( 1, 1 );
-    var avatarTexture2 = THREE.ImageUtils.loadTexture( 'img/avatar2.jpg' );
+    var avatarTexture2 = THREE.ImageUtils.loadTexture( 'res/texture/avatar2.jpg' );
     avatarTexture2.wrapS = avatarTexture2.wrapT = THREE.RepeatWrapping;
     avatarTexture2.anisotropy = renderer.getMaxAnisotropy();
     avatarTexture2.repeat.set( 1, -1 );
