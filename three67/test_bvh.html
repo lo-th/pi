@@ -240,7 +240,7 @@
             modelSkeleton.material.linewidth = 3;
             body.add( modelSkeleton );
 
-            var BonesRevers = false;
+            var BonesRevers = true;
             var bonesNames = [
 			    "Hips", "LeftUpLeg", "Spine1", "RightUpLeg", "LeftLowLeg",
 			    "RightLowLeg", "Chest", "Chest2", "LeftFoot", "RightFoot",
@@ -288,14 +288,14 @@
 
 				if(i<25){
 					bones[i] = bone;
-					bonesRef[i] = { name:bone.name, pos:bone.position, quat:bone.quaternion, scale:bone.scale }
+					bonesRef[i] = { name:bone.name, pos:bone.position, axe:bone.rotation.clone() ,quat:bone.quaternion.clone(), mtx:bone.matrix }
 				}
 			}
 
 			/*var animation = new THREE.Animation( body, "Body/root" );
 			animation.play();*/
 
-			moveBones();
+			//moveBones();
 		}
 
 		function moveBones(){
@@ -303,7 +303,7 @@
 			var i = bones.length;
 			while(i--){
 				bone = bones[i];
-				if(i==2) bone.rotation.set(0, -40*ToRad, 0);
+			//	if(i==2) bone.rotation.set(0, -40*ToRad, 0);
 
 				//bone.updateMatrix();
 			}
@@ -314,6 +314,166 @@
 		function updateSEA(){
 			var delta = clock.getDelta();
 			THREE.AnimationHandler.update( delta );
+
+			if(bvhReader && bones.length){
+
+				var node, bone;
+
+				//
+				var i = bvhReader.nodes.length;
+				//var i = bvhReader.bones.length;
+				var j;
+				var n,m, e, f, g, h;
+				//for ( i=0; i < maxBone; i++){
+				while(i--){
+					node = bvhReader.nodes[i];
+					//node = bvhReader.bones[i];
+					if(node){
+					//	console.log(node.name)
+					j = bones.length;
+					while(j--){
+						bone = bones[j];
+						if(bone.name === node.name){
+							if(bone.name=="Hips")bone.position.set( node.position.x, node.position.y, -node.position.z );
+
+							m = node.matrix.clone();
+							n = new THREE.Matrix4();//.extractRotation( node.matrixWorld );
+							var mtx = bonesRef[j].mtx;
+
+							var q1 = new THREE.Quaternion();
+							//mtx = mtx.multiplyMatrices( m, mtx);
+							//bone.matrix.
+
+							if(node.children.length){
+								var v0 = new THREE.Quaternion().setFromRotationMatrix( node.matrixWorld );
+								var v1 = new THREE.Quaternion().setFromRotationMatrix( node.children[0].matrixWorld );
+								v0.normalize();
+						        v1.inverse().normalize();
+
+						        q1.multiplyQuaternions(v1, v0);
+						        //q1 = new THREE.Quaternion(v0.x-v1.x, v0.y-v1.y,v0.z-v1.z,v0.w-v1.w);
+
+
+						        var t1 = new THREE.Vector3().setFromMatrixPosition( node.children[0].matrixWorld );
+								/*var v2 = new THREE.Vector3().setFromMatrixPosition( node.matrixWorld );
+								
+								v2.z = -v2.z;
+								v1.z = -v1.z;
+								//var mtx0 = node.children[0].matrix;
+								//var mtx2 = mtx0.getInverse( mtx0 );
+								//n = node.matrix.multiplyMatrices( mtx2, node.matrix );//matrixWorld
+								//var par = node.children[0];
+
+
+								//var v1 = new THREE.Vector3(node.x, node.y, node.z);
+								//var v2 = new THREE.Vector3(par.x, par.y, par.z);
+								var v3 = new THREE.Vector3(v1.x-v2.x, v1.y - v2.y, v1.z - v2.z); //to find the length
+								var v4 = new THREE.Vector3(0, 1, 0);
+
+								v4.normalize();
+						        v3.normalize();
+
+								var crossVecs = new THREE.Vector3();
+								crossVecs.crossVectors(v4,v3);
+								crossVecs.normalize();
+
+								var dotVecs = Math.acos(v3.dot(v4)/(v3.length()*v4.length()));
+
+								//var q1 = new THREE.Quaternion();
+								q1.setFromAxisAngle(crossVecs, dotVecs);
+								q1.normalize();*/
+
+
+							}
+
+
+							//mtx = mtx.multiplyMatrices(  n.getInverse( m ), mtx);
+
+							//var mtx = new THREE.Matrix4().extractRotation( node.matrixWorld );
+							//var q = new THREE.Quaternion();
+
+							//q.setFromRotationMatrix( mtx );
+							//e = new THREE.Euler();
+							//e.setFromQuaternion(q.normalize(), bone.rotation.order)
+
+
+							//bone.quaternion.setFromEuler(e);
+							f = bonesRef[j].quat;
+							q1.multiplyQuaternions(q1.inverse(), f);
+							q1.normalize();
+
+							bone.quaternion.slerp(q1, 1)
+
+							//bone.lookAt(t1);
+							//bone.rotation.z = 0;
+
+
+
+
+
+
+
+							/*n = node.quaternion.clone();
+							e =  new THREE.Quaternion();
+							m = bonesRef[j].axe;
+							g = new THREE.Euler( 0, 0, 0, "XYZ" )
+
+							//if(bone.name=="Hips")e =  new THREE.Quaternion(1,0,0,1);//g = new THREE.Euler( j'e0, 180*ToRad, 90*ToRad, "XYZ" )
+							//if(bone.name=="LeftUpLeg" || bone.name=="RightUpLeg")//g = new THREE.Euler( 180*ToRad, 0*ToRad, 180*ToRad, "XYZ" )
+
+							//	e.setFromEuler(g);
+							e.setFromAxisAngle(new THREE.Vector3( 0, 0, 1 ), 90*ToRad)
+							 //g = new THREE.Quaternion(n.x+e.x, n.y+e.y, n.z+e.z, n.w+e.w);
+							n.multiplyQuaternions(e, n);
+							n.normalize();*/
+							/*if(node.children.length){
+								h = node.children[0].quaternion.clone()//.inverse();
+								e = new THREE.Quaternion()//n.x-h.x, n.y+h.y, n.z+h.z, n.w+h.w);
+								e.multiplyQuaternions(n.inverse(), h);
+								e.normalize();
+							}*/
+							//var e =  new THREE.Quaternion();//node.quaternion.clone().normalize();
+							
+							//var el = new THREE.Euler( -node.rotation.y, -node.rotation.x, -node.rotation.z, node.rotation.order ) //node.rotation;
+							//e.setFromEuler(el)
+							//f = bonesRef[j].quat;//.normalize();
+							//g = new THREE.Quaternion();//f.x+e.x, f.y+e.y, f.z+e.z, f.w+e.w);
+
+                          //  g = new THREE.Quaternion(f.x+e.x, f.y+e.y, f.z+e.z, f.w+e.w);
+                          //  g = new THREE.Quaternion(e.x-f.x, e.y-f.y, e.z-f.z, e.w-f.w);
+                           // g = new THREE.Quaternion(e.x+f.x, e.y+f.y, e.z+f.z, e.w+f.w);
+                          // g = new THREE.Quaternion(f.x+e.x, f.y+e.y, f.z+e.z, f.w+e.w);
+                           //  g = new THREE.Quaternion(f.x, f.y, f.z, f.w);
+							
+							//g.multiplyQuaternions(f, e);
+							//g.multiplyQuaternions(e.inverse(), f);
+							//g.multiplyQuaternions(g, f)
+
+							//g.normalize();
+							//e.multiplyQuaternions(e, f.inverse())
+							//console.log(e.x)
+							//bone.quaternion.set( e.x-f.x, e.y-f.y, e.z-f.z, e.w-f.w );
+							//bone.position.copy(node.position );
+							//bone.quaternion.set( e.x, e.y, e.z, e.w );
+							//bone.rotation.setFromQuaternion(e, 'XYZ')
+							
+
+
+							//bone.quaternion.slerp(n, 1)//copy(g);//setFromRotationMatrix(node.matrixWorld)
+
+							//bone.update(node.matrix, true)
+							//bone.matrix.copy( node.matrix );
+							//bone.skinMatrix.multiplyMatrices( node.matrix, bone.matrix )
+							//bone.matrixWorldNeedsUpdate = false;
+						}
+						
+
+					}}
+
+				}
+				//body.updateMatrixWorld( true );
+				modelSkeleton.update();
+			}
 		}
 
 		//-----------------------------------------------------
@@ -390,6 +550,12 @@
 		//-----------------------------------------------------
 		//  BVH TEST
 		//-----------------------------------------------------
+
+		function updateBVH() {
+			if(bvhReader !== null && bvhReader.play){
+				bvhReader.update();
+			}
+		}
 
 		var BVHset = {ax:"x", ay:"y", az:"z", dx:1, dy:1, dz:1, rx:0, ry:0, rz:0, order:"XYZ"};
 		var BVHanimConfig = {
@@ -483,11 +649,7 @@
 			bvhReader.rePosition(new THREE.Vector3( BVHanimConfig.px || 0, BVHanimConfig.py|| 0, BVHanimConfig.pz|| 0 ))
 		}
 
-		function updateBVH() {
-			if(bvhReader !== null && bvhReader.play){
-				bvhReader.update();
-			}
-		}
+		
  
 		function toAngles(o) {
 			var q = o.quaternion.clone();

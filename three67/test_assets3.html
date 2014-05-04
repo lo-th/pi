@@ -279,7 +279,7 @@ workerRvo.onmessage = function(e) {
     while(i--){
         rvoMeshes[i].position.x = rvoMatrixs[6*i + 0];
         rvoMeshes[i].position.z = rvoMatrixs[6*i + 1];
-        rvoMeshes[i].rotation.y = rvoMatrixs[6*i + 2];//*ToRad;
+        rvoMeshes[i].rotation.y = rvoMatrixs[6*i + 2]+(180*ToRad);
 
         rvoVel[(3*i) + 0 ] = rvoMatrixs[6*i + 3];
         rvoVel[(3*i) + 1 ] = rvoMatrixs[6*i + 4];
