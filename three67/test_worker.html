@@ -39,8 +39,6 @@ var goals = [];
 self.onmessage = function(e) {
 
     var rvoMatrixs = e.data.rvoMatrixs;
-    //var clock, newTime=0, oldTime=0
-
     var N = e.data.N;
     var t = 0;
 
@@ -52,26 +50,18 @@ self.onmessage = function(e) {
         simulator.setTimeStep(e.data.step || 0.25);
         target01 = new RVO.Vector2( 0, 0 );
         target02 = new RVO.Vector2( 0, 0 );
-        simulator.setAgentDefaults(15, 10, 10, 10, 0.5, 0.5);
+        simulator.setAgentDefaults(15, 10, 10, 0, 0.5, 0.5);
 
         for(var i=0; i!==N; i++){
-            var c = 0;
             var v = new RVO.Vector2(Math.cos(i * 2 * Math.PI / N), Math.sin(i * 2 * Math.PI / N));
             simulator.addAgent(v.mul_k(50));
-           // simulator.setAgentMaxSpeed(c, .5 + Math.random() * 1);
+            simulator.setAgentMaxSpeed(i, .25 + Math.random() * 0.25);
         }
     } else { // loop
         var p, r, v, goalVector, ag;
         t = Date.now();
-        
-        
-        
-       // var clock =  0.00125//(this.performance.KdTree+simulator.performance.updateAgent)//0.001 * (Date.now() - e.data.oldTime);
 
-        var clock = 100//(t - e.data.oldTime)*3.88//(1/60) //+ (0.001 * (t - e.data.oldTime));
-        //var clock = (0.001 * (t - e.data.oldTime));
-
-       // simulator.doStep();
+        simulator.doStep();
 
         var i = N;
         while(i--){
@@ -83,37 +73,25 @@ self.onmessage = function(e) {
             p = simulator.getAgentPosition(i);
             r = simulator.getAgentOrientation(i);
             v = simulator.getAgentVelocity(i);
-
             
             goalVector = goals[i].moins( p );
             if ( goalVector.length() > 1) goalVector = goalVector.normalize();
             simulator.setAgentPrefVelocity(i, goalVector);
 
-          //  rvoMatrixs[(6*i) + 3 ] = v.x/clock;//((p.x-rvoMatrixs[(6*i) + 0 ]))/clock;
-          //  rvoMatrixs[(6*i) + 4 ] = v.y/clock;//((p.y-rvoMatrixs[(6*i) + 1 ]))/clock;
-           /* rvoMatrixs[(6*i) + 3 ] = ((p.x-rvoMatrixs[(6*i) + 0 ]))/clock;
-            rvoMatrixs[(6*i) + 4 ] = ((p.y-rvoMatrixs[(6*i) + 1 ]))/clock;
-            rvoMatrixs[(6*i) + 5 ] = ((r-rvoMatrixs[(6*i) + 2 ]))/clock;*/
-
-            rvoMatrixs[(6*i) + 3 ] = ((p.x-rvoMatrixs[(6*i) + 0 ]))//*clock;
-            rvoMatrixs[(6*i) + 4 ] = ((p.y-rvoMatrixs[(6*i) + 1 ]))//*clock;
-           // rvoMatrixs[(6*i) + 3 ] = ((rvoMatrixs[(6*i) + 0 ]-p.x))*clock;
-           //rvoMatrixs[(6*i) + 4 ] = ((rvoMatrixs[(6*i) + 1 ]-p.y))*clock;
-            rvoMatrixs[(6*i) + 5 ] = ((r-rvoMatrixs[(6*i) + 2 ]))//*(clock*0.5);
+            rvoMatrixs[(6*i) + 3 ] = ((p.x-rvoMatrixs[(6*i) + 0 ]));
+            rvoMatrixs[(6*i) + 4 ] = ((p.y-rvoMatrixs[(6*i) + 1 ]));
+            rvoMatrixs[(6*i) + 5 ] = ((r-rvoMatrixs[(6*i) + 2 ]));
 
             rvoMatrixs[(6*i) + 0 ] = p.x;
             rvoMatrixs[(6*i) + 1 ] = p.y;
             rvoMatrixs[(6*i) + 2 ] = r;
         }
 
-        simulator.doStep();
-
         perf = simulator.performance.fpsint;
        
     }
-    //oldTime = Date.now();
+    // Send data back to the main thread
     self.postMessage({ perf:perf, oldTime:t, rvoMatrixs:rvoMatrixs }, [rvoMatrixs.buffer]);
-
 }
 </script>
 
@@ -124,6 +102,7 @@ self.onmessage = function(e) {
 
 <script id="workerOimo" type="javascript/worker">    
 var world = null;
+var timestep = 1/60;
 var perf = "";
 var body = [];
 
@@ -133,7 +112,7 @@ self.onmessage = function(e) {
     var rvoVel = e.data.rvoVel;
     var N = e.data.N;
 
-    if ( world == null && e.data.url !== "") { // init
+    if ( world == null && e.data.url !== "") {
         // Load oimo script
         importScripts(e.data.url);
         
@@ -142,15 +121,12 @@ self.onmessage = function(e) {
         OIMO.INV_SCALE = 1;
         world = new OIMO.World(e.data.dt, 2, 8);
         world.gravity.init(0,-10,0);
-        //matrixs = e.data.matrixs;
 
         // Ground plane
         var ground = new OIMO.Body({size:[150, 10, 150], pos:[0,-5,0], world:world, config:[0, 0.3, 0.1]});
 
         // wall
 
-
-        
         var vx, vy, rx, ry, r;
         for(var i=0; i!==N; i++){
             if(i >= N*0.5) {
@@ -162,7 +138,7 @@ self.onmessage = function(e) {
                 vy = (Math.sin(i * 2 * Math.PI /( N*0.5)))*50;
                 r = Math.atan2(vx, vy);
 
-                body[i] = new OIMO.Body({type:'box', size:[0.5,  1,  0.5], pos:[vx,0.51,vy], rot:[0, r*(180 / Math.PI),0], move:true, noSleep:true, world:world, config:[10, 0.3, 0.1]});
+                body[i] = new OIMO.Body({type:'box', size:[0.5,  1,  0.5], pos:[vx,0.51,vy], rot:[0, r*(180 / Math.PI),0], move:true, noSleep:true, world:world, config:[100, 0.3, 0.1]});
             } 
         }
     } else { // loop
@@ -170,42 +146,34 @@ self.onmessage = function(e) {
         world.step();
 
         var i = N;
-        var m, j;
+        var m, j, b;
 
         while(i--){
             j = 16;
             if(body[i]){
-            m = body[i].body.getMatrix();
-             while(j--){
+            b = body[i].body;
+            m = b.getMatrix();
+            while(j--){
                 matrixs[(16*i) + j] = m[j];
             } 
             if(i < N*0.5){
-               // body[i].body.applyImpulse(new OIMO.Vec3(), new OIMO.Vec3(rvoVel[(i*3)+0], 0, rvoVel[(i*3)+1]));
 
-              //  if(body[i].body.linearVelocity){
-                if( rvoVel[(i*3)+0] !==0)body[i].body.linearVelocity.x = rvoVel[(i*3)+0]/(1/60);
-                //body[i].body.linearVelocity.y = 0;
-                if( rvoVel[(i*3)+1] !==0)body[i].body.linearVelocity.z = rvoVel[(i*3)+1]/(1/60);
-          // }
-                //body[i].body.setOrientation(0,e.data.rvoVel[(i*3)+2],0);
-                //body[i].body.setOrientation(0,0,0);
+                b.linearVelocity.x = rvoVel[(i*3)+0]/timestep;
+                b.linearVelocity.z = rvoVel[(i*3)+1]/timestep;
 
-               // body[i].body.angularVelocity.x = 0;
-              //  body[i].body.angularVelocity.y = rvoVel[(i*3)+2]/(1/60);
-               // body[i].body.angularVelocity.z = 0;
+                b.angularVelocity.y = rvoVel[(i*3)+2]/timestep;
 
-                //body[i].body.orientation.x = 0;
-               // body[i].body.orientation.y = 0;//e.data.rvoVel[(i*3)+2];//*ToRad;
-               // body[i].body.orientation.z = 0;
-               // body[i].body.orientation.s = 0;
+                b.orientation.x = 0;
+                // b.orientation.y = 1;
+                b.orientation.z = 0;
+                //b.orientation.s = rvoVel[(i*3)+2]/timestep;
 
-                //body[i].body.orientation.normalize(body[i].body.orientation);
-            }
-             
+                //b.orientation.normalize(b.orientation);
+            }  
         }
     }
 
-        perf = world.performance.fpsint;
+    perf = world.performance.fpsint;
 
     }
     // Send data back to the main thread
@@ -236,12 +204,13 @@ var bgcolor = 0x383838;
 //OIMO worker var
 var dt = 1/60, N=200;
 var matrixs = new Float32Array(N*16);
-var workerOimo = new Worker(window.URL.createObjectURL( new Blob([document.querySelector('#workerOimo').textContent])));
+var workerOimo = new Worker(window.URL.createObjectURL( new Blob([document.querySelector('#workerOimo').textContent], {type : 'text/javascript'}) ));
 workerOimo.postMessage = workerOimo.webkitPostMessage || workerOimo.postMessage;
 var oimoSendTime; // time when we sent last message
 var oimoInfo = 0; // fps info 
 
 // RVO worker var
+var tt = 0;
 var Nagent = 100;
 var dtrvo = 1/60;
 var rvoMatrixs = new Float32Array(Nagent*6);
@@ -251,45 +220,21 @@ while(g--){ rvoMatrixs[g] = 0;}
 g = rvoVel.length;
 while(g--){ rvoVel[g] = 0;}
 var oldTime = 0;
-var workerRvo = new Worker(window.URL.createObjectURL(new Blob([document.querySelector('#workerRvo').textContent])));
+var workerRvo = new Worker(window.URL.createObjectURL(new Blob([document.querySelector('#workerRvo').textContent], {type : 'text/javascript'}) ));
 workerRvo.postMessage = workerRvo.webkitPostMessage || workerRvo.postMessage;
 var rvoSendTime; // time when we sent last message
 var rvoInfo = 0; // fps info 
 
-//-----------------------------------
-// ALL SOURCE LOADED FROM PNG 
-//-----------------------------------
-window.onload = sourceLoaded;
-
-function sourceLoaded (){
-    
-    // send OIMO script to worker
-    /*var blobO = new Blob([document.querySelector('#OIMO').textContent]);
-    var url1 = window.URL.createObjectURL(blobO);
-    sendDataToOimoWorker(url1);
-
-     // send RVO script to worker
-    var blobR = new Blob([document.querySelector('#RVO').textContent]);
-    var url2 = window.URL.createObjectURL(blobR);
-    sendDataToRvoWorker(url2);*/
-    
-  //  sendDataToOimoWorker(document.location.href.replace(/\/[^/]*$/,"/") + "build/oimo.min.js");
-   sendDataToRvoWorker(document.location.href.replace(/\/[^/]*$/,"/") + "build/rvo.min.js");
-
-    init();
-    loop();
-}
-
-function initOimo (){
-    sendDataToOimoWorker(document.location.href.replace(/\/[^/]*$/,"/") + "build/oimo.min.js");
-}
+window.onload = init;
 
 //-----------------------------------
-// OIMO WORKER 
+//
+//   OIMO WORKER 
+//
 //-----------------------------------
 
 workerOimo.onmessage = function(e) {
-
+    // Get fresh data from the worker
     matrixs = e.data.matrixs;
     i = N;
     while(i--){
@@ -311,21 +256,27 @@ workerOimo.onmessage = function(e) {
 }
 
 function sendDataToOimoWorker(url){
-       oimoSendTime = Date.now();
-       workerOimo.postMessage({ N: N, dt: dt, url: url || "", rvoVel:rvoVel, matrixs: matrixs },[matrixs.buffer]);
+    oimoSendTime = Date.now();
+    workerOimo.postMessage({ N: N, dt: dt, url: url || "", rvoVel:rvoVel, matrixs: matrixs },[matrixs.buffer]);
+}
+
+function initOimoWorker (){
+    sendDataToOimoWorker(document.location.href.replace(/\/[^/]*$/,"/") + "build/oimo.min.js");
 }
 
 //-----------------------------------
-// RVO WORKER 
+//
+//   RVO WORKER 
+//
 //-----------------------------------
-var tt = 0;
+
 workerRvo.onmessage = function(e) {
     // Get fresh data from the worker
     rvoMatrixs = e.data.rvoMatrixs;
 
     i = Nagent;
-    if(tt<1) tt++;
-    else {if(tt==1)initOimo(); tt=2; }
+    if(tt<2) tt++;
+    else {if(tt==2)initOimoWorker(); tt=3; }
     while(i--){
         rvoMeshes[i].position.x = rvoMatrixs[6*i + 0];
         rvoMeshes[i].position.z = rvoMatrixs[6*i + 1];
@@ -352,8 +303,14 @@ function sendDataToRvoWorker(url){
     workerRvo.postMessage({ oldTime:oldTime, N: Nagent, url: url || "", rvoMatrixs: rvoMatrixs },[rvoMatrixs.buffer]);
 }
 
+function initRvoWorker(){
+    sendDataToRvoWorker(document.location.href.replace(/\/[^/]*$/,"/") + "build/rvo.min.js");
+}
+
 //-----------------------------------
-// THREE JS SIDE 
+//
+//   THREE JS SIDE 
+//
 //-----------------------------------
 
 function init() {
@@ -361,7 +318,6 @@ function init() {
 
     camPos = { horizontal: 90, vertical: 75, distance: 125, automove: false };
     mouse = { ox:0, oy:0, h:0, v:0, mx:0, my:0, down:false, over:false, moving:true };
-
 
     renderer = new THREE.WebGLRenderer( {precision: "lowp", antialias: false } );
     renderer.setSize( window.innerWidth, window.innerHeight );
@@ -477,6 +433,10 @@ function init() {
     }else if( body.attachEvent ){
         body.attachEvent("onmousewheel" , onMouseWheel); // ie
     }
+
+
+    loop();
+    initRvoWorker();
 }
 
 function resize() {
