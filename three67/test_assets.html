@@ -8,7 +8,7 @@
     * {  margin: 0; padding: 0; border: 0;}
     body { background-color: #383838; overflow: hidden; color: #eeeeee; font-family: monospace; font-size: 12px; }
     input{ margin:0; padding:4px; }
-    #interface{ position: absolute; left:10px; top:10px; width:456px; height:20px; }
+    #interface{ position: absolute; left:90px; top:10px; width:80px; height:20px; }
     #info{ pointer-events:none; position: absolute; left:10px; top:10px; width: 400px; height: 400px; }
 </style>
 
@@ -21,6 +21,9 @@
 <body>
 <div id='container'></div>
 <div id="info"></div>
+<div id='interface'>
+    <input type="button" value="skeleton on" onClick=togleSkeleton()  id='bskeleton'>
+</div>
 
 <script>
 
@@ -39,7 +42,7 @@ var stats;
 var meshs = [];
 var squel = [];
 var Pool;
-
+var isSkeletonVisible = true;
 
 init();
 
@@ -178,6 +181,15 @@ function loop() {
 //--------------------------------
 // SEA3D
 //--------------------------------
+
+function togleSkeleton(){
+    var base = document.getElementById("bskeleton");
+    if(isSkeletonVisible){ isSkeletonVisible = false;  base.value = "skeleton off";}
+    else {isSkeletonVisible = true;  base.value = "skeleton on";}
+    for(var i=0, j=squel.length; i<j; i++){
+        squel[i].visible = isSkeletonVisible;
+    }
+}
 
 function populate(){
 
