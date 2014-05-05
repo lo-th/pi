@@ -47,17 +47,19 @@ self.onmessage = function(e) {
         importScripts(e.data.url);
 
         simulator = new RVO.Simulator();
-        simulator.setTimeStep(e.data.step || 0.25);
+        simulator.setTimeStep(e.data.step || 2);
         target01 = new RVO.Vector2( 0, 0 );
         target02 = new RVO.Vector2( 0, 0 );
         simulator.setAgentDefaults(15, 10, 10, 0, 0.5, 0.5);
 
         for(var i=0; i!==N; i++){
             var v = new RVO.Vector2(Math.cos(i * 2 * Math.PI / N), Math.sin(i * 2 * Math.PI / N));
-            simulator.addAgent(v.mul_k(50));
-            simulator.setAgentMaxSpeed(i, .25 + Math.random() * 0.25);
+            simulator.addAgent(v.mul_k(30));
+            simulator.setAgentMaxSpeed(i, .05 + Math.random() * 0.1);
         }
     } else { // loop
+        target01.x = target02.x = e.data.target[0];
+        target01.y = target02.y = e.data.target[1];
         var p, r, v, goalVector, ag;
         t = Date.now();
 
@@ -123,22 +125,26 @@ self.onmessage = function(e) {
         world.gravity.init(0,-10,0);
 
         // Ground plane
-        var ground = new OIMO.Body({size:[150, 10, 150], pos:[0,-5,0], world:world, config:[0, 0.3, 0.1]});
+        var ground = new OIMO.Body({size:[140.8, 10, 70.4], pos:[0,-5,0], world:world, config:[0, 0.3, 0.1]});
 
         // wall
+        var w1 = new OIMO.Body({size:[140.8, 10, 3.2], pos:[0,5,36.8], world:world, config:[0, 0.3, 0.1]});
+        var w2 = new OIMO.Body({size:[140.8, 10, 3.2], pos:[0,5,-36.8], world:world, config:[0, 0.3, 0.1]});
+        var w3 = new OIMO.Body({size:[3.2, 10, 76.8], pos:[72,5,0], world:world, config:[0, 0.3, 0.1]});
+        var w4 = new OIMO.Body({size:[3.2, 10, 76.8], pos:[-72,5,0], world:world, config:[0, 0.3, 0.1]});
 
         var vx, vy, rx, ry, r;
         for(var i=0; i!==N; i++){
             if(i >= N*0.5) {
                 vx =-10+Math.random()*20;
                 vy =-10+Math.random()*20;
-                body[i] = new OIMO.Body({type:'sphere', size:[0.5], pos:[vx, 0.51,vy], move:true, world:world});
+                body[i] = new OIMO.Body({type:'sphere', size:[0.25], pos:[vx, 0.25,vy], move:true, world:world, config:[1, 0.1, 0.7]});
             }else{
-                vx = (Math.cos(i * 2 * Math.PI /( N*0.5)))*50;
-                vy = (Math.sin(i * 2 * Math.PI /( N*0.5)))*50;
+                vx = (Math.cos(i * 2 * Math.PI /( N*0.5)))*30;
+                vy = (Math.sin(i * 2 * Math.PI /( N*0.5)))*30;
                 r = Math.atan2(vx, vy);
 
-                body[i] = new OIMO.Body({type:'box', size:[0.5,  1,  0.5], pos:[vx,0.51,vy], rot:[0, r*(180 / Math.PI),0], move:true, noSleep:true, world:world, config:[100, 0.3, 0.1]});
+                body[i] = new OIMO.Body({type:'box', size:[0.5,  1,  0.5], pos:[vx,0.51,vy], rot:[0, r*(180 / Math.PI),0], move:true, noSleep:true, world:world, config:[10, 0.3, 0.1]});
             } 
         }
     } else { // loop
@@ -194,9 +200,10 @@ var info = document.getElementById("info");
 var sourceInfo = "";
 
 // THREE var
-var container, camera, scene, renderer, clock, camPos, mouse;
+var container, camera, scene, renderer, clock, projector, cam, mouse;
 var oimoMeshes=[]
 var rvoMeshes=[];
+var targetList = [];
 var pool;
 
 var fps=0, time, time_prev=0, fpsint = 0;
@@ -214,6 +221,7 @@ var oimoInfo = 0; // fps info
 var tt = 0;
 var Nagent = 100;
 var dtrvo = 1/60;
+var rvoTarget = [0,0];
 var rvoMatrixs = new Float32Array(Nagent*6);
 var rvoVel = new Float32Array(Nagent*3);
 var g = rvoMatrixs.length;
@@ -301,7 +309,7 @@ workerRvo.onmessage = function(e) {
 
 function sendDataToRvoWorker(url){
     rvoSendTime = Date.now();
-    workerRvo.postMessage({ oldTime:oldTime, N: Nagent, url: url || "", rvoMatrixs: rvoMatrixs },[rvoMatrixs.buffer]);
+    workerRvo.postMessage({ oldTime:oldTime, N:Nagent, url:url || "", target:rvoTarget, rvoMatrixs: rvoMatrixs },[rvoMatrixs.buffer]);
 }
 
 function initRvoWorker(){
@@ -317,8 +325,8 @@ function initRvoWorker(){
 function init() {
     if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
-    camPos = { horizontal: 90, vertical: 75, distance: 125, automove: false };
-    mouse = { ox:0, oy:0, h:0, v:0, mx:0, my:0, down:false, over:false, moving:true };
+    cam = { horizontal: 0, vertical: 65, distance: 50, automove: false };
+    mouse = { ox:0, oy:0, h:0, v:0, mx:0, my:0, down:false, px:0, py:0, over:false, moving:true };
 
     clock = new THREE.Clock();
 
@@ -337,6 +345,8 @@ function init() {
 
     // scene
     scene = new THREE.Scene();
+
+    projector = new THREE.Projector();
 
     // camera
     camera = new THREE.PerspectiveCamera( 30, window.innerWidth / window.innerHeight, 0.5, 10000 );
@@ -385,19 +395,21 @@ function init() {
     var planeMaterial01 = new THREE.MeshBasicMaterial( { color: 0x403030 } );
     var planeMaterial02 = new THREE.MeshBasicMaterial( { color: 0x304030 } );
 
-    geometry = THREE.BufferGeometryUtils.fromGeometry( new THREE.PlaneGeometry( 400, 400, 1, 1 ) );
+    geometry = THREE.BufferGeometryUtils.fromGeometry( new THREE.PlaneGeometry( 140.8, 70.4, 1, 1 ) );
     
     var mesh = new THREE.Mesh( geometry, material );
-    mesh.castShadow = false;
-    mesh.receiveShadow = true;
+   //mesh.castShadow = false;
+    //mesh.receiveShadow = true;
     mesh.rotation.x = -90 * ToRad;
+    mesh.position.y = -0.1;
     scene.add( mesh );
+    targetList.push(mesh);
        
     // geometry
     var cubeGeo = THREE.BufferGeometryUtils.fromGeometry(new THREE.BoxGeometry( 0.5,  1,  0.25, 1, 1, 1));
-    var sphereGeo = THREE.BufferGeometryUtils.fromGeometry(new THREE.SphereGeometry( 0.5, 12, 8));
+    var sphereGeo = THREE.BufferGeometryUtils.fromGeometry(new THREE.SphereGeometry( 0.25, 12, 8));
     var planeGeo = THREE.BufferGeometryUtils.fromGeometry(new THREE.PlaneGeometry( 0.5, 0.25, 1, 1));
-    planeGeo.applyMatrix(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
+    planeGeo.applyMatrix(new THREE.Matrix4().makeRotationX(Math.PI / 2));
 
     for(var i=0; i<N*0.5; i++){
        // if(i<N*0.25) mesh = new THREE.Mesh( cubeGeo, cubeMaterial01 );
@@ -484,12 +496,12 @@ function displayInfo(){
 //-----------------------------------
 
 function populate() {
-    var avatarTexture = THREE.ImageUtils.loadTexture( 'res/texture/avatar3.jpg' );
-    avatarTexture.wrapS = avatarTexture.wrapT = THREE.RepeatWrapping;
-    avatarTexture.anisotropy = renderer.getMaxAnisotropy();
-    avatarTexture.repeat.set( 1, -1 );
+    var texture = THREE.ImageUtils.loadTexture( 'res/texture/avatar3.jpg' );
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.anisotropy = renderer.getMaxAnisotropy();
+    texture.repeat.set( 1, -1 );
 
-    var mat = new THREE.MeshPhongMaterial({ map:avatarTexture, ambient: 0x202020, specular: 0x303030, shininess: 30, skinning: true });
+    var mat = new THREE.MeshPhongMaterial({ map:texture, ambient: 0x202020, specular: 0x303030, shininess: 30, skinning: true });
 
     var models = ["monster_nurce", "monster_zombi"];
 
@@ -515,9 +527,83 @@ function populate() {
         oimoMeshes[i].add(m);
     }
 
-
-
+    construct();
 }
+
+function construct() {
+    var texture = THREE.ImageUtils.loadTexture( 'res/texture/wall.png' );
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.anisotropy = renderer.getMaxAnisotropy();
+    texture.repeat.set( 1, -1 );
+
+    var mat = new THREE.MeshPhongMaterial({ map:texture, ambient: 0x202020, specular: 0x303030, shininess: 30});
+
+    var g0 = pool.getGeometry('floor', true, 0.1);
+    var g1 = pool.getGeometry('wall005', true, 0.1);
+    var g2 = pool.getGeometry('wall010', true, 0.1);
+    var g3 = pool.getGeometry('wall003', true, 0.1);
+    var g4 = pool.getGeometry('wall006', true, 0.1);
+    var g5 = pool.getGeometry('wall012', true, 0.1);
+    var g6 = pool.getGeometry('wall009', true, 0.1);
+
+    var g = new THREE.Geometry();
+    var m;
+    for(var i=0; i<44; i++){
+        for(var j=0; j<22; j++){
+            m = new THREE.Matrix4().makeTranslation(3.2*i,0,3.2*j);
+            g.merge(g0,m);
+        }
+
+        m = new THREE.Matrix4().makeTranslation(3.2*i,0,-3.2);
+        g.merge(g2,m);
+        m = new THREE.Matrix4().makeTranslation(3.2*i,0,3.2*22);
+        g.merge(g2,m);
+    }
+
+    for(var j=0; j<22; j++){
+        m = new THREE.Matrix4().makeTranslation(-3.2,0,3.2*j);
+        g.merge(g1,m);
+        m = new THREE.Matrix4().makeTranslation(3.2*44,0,3.2*j);
+        g.merge(g1,m);
+    }
+
+    // corner
+    m = new THREE.Matrix4().makeTranslation(-3.2,0,-3.2);
+    g.merge(g4,m);
+    m = new THREE.Matrix4().makeTranslation(-3.2,0,3.2*22);
+    g.merge(g3,m);
+    m = new THREE.Matrix4().makeTranslation(3.2*44,0,-3.2);
+    g.merge(g5,m);
+    m = new THREE.Matrix4().makeTranslation(3.2*44,0,3.2*22);
+    g.merge(g6,m);
+
+    g.applyMatrix(new THREE.Matrix4().makeTranslation(-(22*3.2)+1.6,0,-(11*3.2)+1.6));
+
+    var m = new THREE.Mesh( THREE.BufferGeometryUtils.fromGeometry(g), mat );
+    scene.add(m);
+    m.castShadow = false;
+    m.receiveShadow = true;
+}
+
+//-----------------------------------------------------
+//  RAY
+//-----------------------------------------------------
+
+function rayTest(event) {
+    var vector = new THREE.Vector3( mouse.mx, mouse.my, 1 );
+    projector.unprojectVector( vector, camera );
+    var ray = new THREE.Raycaster( camera.position, vector.sub( camera.position ).normalize() );
+
+    var intersects = ray.intersectObjects( targetList );
+    
+    if ( intersects.length > 0 ){
+        mouse.px = Math.floor(intersects[0].point.x);
+        mouse.py = Math.floor(intersects[0].point.z);
+        rvoTarget = [mouse.px, mouse.py];
+        //RvoWorker.postMessage({tell:"TARGET", x:mouse.tx, y:mouse.ty });
+       // console.log(mouse.px, mouse.py)
+    }
+};
 
 //-----------------------------------
 // MATH
@@ -538,7 +624,7 @@ function Orbit(origine, horizontal, vertical, distance) {
 //-----------------------------------
 
 function moveCamera() {
-    camera.position.copy(Orbit(center, camPos.horizontal, camPos.vertical, camPos.distance));
+    camera.position.copy(Orbit(center, cam.horizontal, cam.vertical, cam.distance));
     camera.lookAt(center);
 }
 
@@ -546,9 +632,13 @@ function onMouseDown(e) {
     e.preventDefault();
     mouse.ox = e.clientX;
     mouse.oy = e.clientY;
-    mouse.h = camPos.horizontal;
-    mouse.v = camPos.vertical;
+    mouse.mx = ( e.clientX / window.innerWidth ) * 2 - 1;
+    mouse.my = - ( e.clientY / window.innerHeight ) * 2 + 1;
+    mouse.h = cam.horizontal;
+    mouse.v = cam.vertical;
     mouse.down = true;
+
+    rayTest();
 }
 
 function onMouseUp(e) {
@@ -560,19 +650,21 @@ function onMouseMove(e) {
     e.preventDefault();
     if (mouse.down ) {
         document.body.style.cursor = 'move';
-        camPos.horizontal = ((e.clientX - mouse.ox) * 0.3) + mouse.h;
-        camPos.vertical = (-(e.clientY - mouse.oy) * 0.3) + mouse.v;
+        cam.horizontal = ((e.clientX - mouse.ox) * 0.3) + mouse.h;
+        cam.vertical = (-(e.clientY - mouse.oy) * 0.3) + mouse.v;
         moveCamera();
     }
 }
 
 function onMouseWheel(e) {
+    e.preventDefault();
     var delta = 0;
     if(e.wheelDelta){delta=e.wheelDelta*-1;}
     else if(e.detail){delta=e.detail*20;}
-    camPos.distance+=(delta/10);
-    moveCamera();   
-    e.preventDefault();
+    cam.distance+=(delta/80);
+    if(cam.distance<0.01)cam.distance = 0.01;
+    if(cam.distance>150)cam.distance = 150;
+    moveCamera(); 
 }
 
 </script>
