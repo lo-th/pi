@@ -47,10 +47,10 @@ self.onmessage = function(e) {
         importScripts(e.data.url);
 
         simulator = new RVO.Simulator();
-        simulator.setTimeStep(e.data.step || 2);
+        simulator.setTimeStep(e.data.step || 1.5);
         target01 = new RVO.Vector2( 0, 0 );
         target02 = new RVO.Vector2( 0, 0 );
-        simulator.setAgentDefaults(15, 10, 10, 0, 0.5, 0.5);
+        simulator.setAgentDefaults(15/2, 10/2, 10/2, 0, 0.5, 0.5);
 
         for(var i=0; i!==N; i++){
             var v = new RVO.Vector2(Math.cos(i * 2 * Math.PI / N), Math.sin(i * 2 * Math.PI / N));
@@ -128,23 +128,24 @@ self.onmessage = function(e) {
         var ground = new OIMO.Body({size:[140.8, 10, 70.4], pos:[0,-5,0], world:world, config:[0, 0.3, 0.1]});
 
         // wall
-        var w1 = new OIMO.Body({size:[140.8, 10, 3.2], pos:[0,5,36.8], world:world, config:[0, 0.3, 0.1]});
-        var w2 = new OIMO.Body({size:[140.8, 10, 3.2], pos:[0,5,-36.8], world:world, config:[0, 0.3, 0.1]});
-        var w3 = new OIMO.Body({size:[3.2, 10, 76.8], pos:[72,5,0], world:world, config:[0, 0.3, 0.1]});
-        var w4 = new OIMO.Body({size:[3.2, 10, 76.8], pos:[-72,5,0], world:world, config:[0, 0.3, 0.1]});
+        var w1 = new OIMO.Body({size:[140.8, 20, 3.2], pos:[0,10,36.8], world:world, config:[0, 0.3, 0.1]});
+        var w2 = new OIMO.Body({size:[140.8, 20, 3.2], pos:[0,10,-36.8], world:world, config:[0, 0.3, 0.1]});
+        var w3 = new OIMO.Body({size:[3.2, 20, 76.8], pos:[72,10,0], world:world, config:[0, 0.3, 0.1]});
+        var w4 = new OIMO.Body({size:[3.2, 20, 76.8], pos:[-72,10,0], world:world, config:[0, 0.3, 0.1]});
 
         var vx, vy, rx, ry, r;
         for(var i=0; i!==N; i++){
             if(i >= N*0.5) {
                 vx =-10+Math.random()*20;
                 vy =-10+Math.random()*20;
-                body[i] = new OIMO.Body({type:'sphere', size:[0.25], pos:[vx, 0.25,vy], move:true, world:world, config:[1, 0.1, 0.7]});
+                body[i] = new OIMO.Body({type:'sphere', size:[0.5], pos:[vx, 0.5,vy], move:true, world:world, config:[1, 0.1, 0.7]});
             }else{
                 vx = (Math.cos(i * 2 * Math.PI /( N*0.5)))*30;
                 vy = (Math.sin(i * 2 * Math.PI /( N*0.5)))*30;
                 r = Math.atan2(vx, vy);
 
-                body[i] = new OIMO.Body({type:'box', size:[0.5,  1,  0.5], pos:[vx,0.51,vy], rot:[0, r*(180 / Math.PI),0], move:true, noSleep:true, world:world, config:[10, 0.3, 0.1]});
+                //body[i] = new OIMO.Body({type:'box', size:[0.5,  1,  0.5], pos:[vx,0.51,vy], rot:[0, r*(180 / Math.PI),0], move:true, noSleep:true, world:world, config:[10, 0.3, 0.1]});
+                body[i] = new OIMO.Body({type:'box', size:[0.5,  2,  0.5], pos:[vx,1,vy], rot:[0, r*(180 / Math.PI),0], move:true, noSleep:true, world:world, config:[10, 0.3, 0.1]});
             } 
         }
     } else { // loop
@@ -392,8 +393,8 @@ function init() {
 
     var sphereMaterial = new THREE.MeshPhongMaterial( { color: 0x8888CC } );
 
-    var planeMaterial01 = new THREE.MeshBasicMaterial( { color: 0x403030 } );
-    var planeMaterial02 = new THREE.MeshBasicMaterial( { color: 0x304030 } );
+    var planeMaterial01 = new THREE.MeshBasicMaterial( { color: 0xcccccc } );
+    var planeMaterial02 = new THREE.MeshBasicMaterial( { color: 0x30cc30 } );
 
     geometry = THREE.BufferGeometryUtils.fromGeometry( new THREE.PlaneGeometry( 140.8, 70.4, 1, 1 ) );
     
@@ -407,7 +408,7 @@ function init() {
        
     // geometry
     var cubeGeo = THREE.BufferGeometryUtils.fromGeometry(new THREE.BoxGeometry( 0.5,  1,  0.25, 1, 1, 1));
-    var sphereGeo = THREE.BufferGeometryUtils.fromGeometry(new THREE.SphereGeometry( 0.25, 12, 8));
+    var sphereGeo = THREE.BufferGeometryUtils.fromGeometry(new THREE.SphereGeometry( 0.5, 12, 8));
     var planeGeo = THREE.BufferGeometryUtils.fromGeometry(new THREE.PlaneGeometry( 0.5, 0.25, 1, 1));
     planeGeo.applyMatrix(new THREE.Matrix4().makeRotationX(Math.PI / 2));
 
@@ -513,11 +514,12 @@ function populate() {
     for(var i=0; i<N*0.5; i++){
         if(i<N*0.25)n=0;
         else n=1;
-        s = 0.025;
+        //s = 0.025;
+        s = 0.05;
         m = new THREE.SkinnedMesh( modelsGeo[n], mat, false );
         m.scale.set(s,s,-s);
         m.rotation.y = 180*ToRad;
-        m.position.y =0.1;
+        m.position.y =0.2;
         m.castShadow = true;
 
         anim = models[n]+"/walk";
@@ -531,7 +533,7 @@ function populate() {
 }
 
 function construct() {
-    var texture = THREE.ImageUtils.loadTexture( 'res/texture/wall.png' );
+    var texture = THREE.ImageUtils.loadTexture( 'res/texture/wall.jpg' );
     texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
     texture.anisotropy = renderer.getMaxAnisotropy();
     texture.repeat.set( 1, -1 );
@@ -539,6 +541,7 @@ function construct() {
     var mat = new THREE.MeshPhongMaterial({ map:texture, ambient: 0x202020, specular: 0x303030, shininess: 30});
 
     var g0 = pool.getGeometry('floor', true, 0.1);
+    var gx = pool.getGeometry('floor001', true, 0.1);
     var g1 = pool.getGeometry('wall005', true, 0.1);
     var g2 = pool.getGeometry('wall010', true, 0.1);
     var g3 = pool.getGeometry('wall003', true, 0.1);
@@ -547,13 +550,16 @@ function construct() {
     var g6 = pool.getGeometry('wall009', true, 0.1);
 
     var g = new THREE.Geometry();
-    var m;
+    var m, r;
     for(var i=0; i<44; i++){
         for(var j=0; j<22; j++){
+            r = Math.floor(Math.random()*4);
+            g0.applyMatrix(new THREE.Matrix4().makeRotationY((r*90)*ToRad));
+            gx.applyMatrix(new THREE.Matrix4().makeRotationY((r*90)*ToRad));
             m = new THREE.Matrix4().makeTranslation(3.2*i,0,3.2*j);
-            g.merge(g0,m);
+            if(i>4 && i<39)g.merge(g0,m);
+            else g.merge(gx,m);
         }
-
         m = new THREE.Matrix4().makeTranslation(3.2*i,0,-3.2);
         g.merge(g2,m);
         m = new THREE.Matrix4().makeTranslation(3.2*i,0,3.2*22);
