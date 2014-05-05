@@ -220,6 +220,7 @@ function init() {
 
     //renderer.gammaInput = true;
     //renderer.gammaOutput = true;
+    renderer.shadowMapCullFace = THREE.CullFaceBack;
     renderer.shadowMapEnabled = true;
     renderer.autoClearColor = false;
     renderer.autoClear = false;
@@ -245,7 +246,7 @@ function init() {
     scene.add( new THREE.AmbientLight( bgcolor ) );
 
     light = new THREE.DirectionalLight( 0xffffff, 1.3 );
-    var d = 30;
+    var d = 20;
 
     light.position.set( d, d, d );
 
@@ -263,6 +264,7 @@ function init() {
     light.shadowCameraFar = 3*d;
     light.shadowCameraNear = d;
     light.shadowDarkness = 0.5;
+    light.shadowBias =  -0.002;
 
     scene.add( light );
 
