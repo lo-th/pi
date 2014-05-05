@@ -392,34 +392,26 @@ function populate(){
         squel[i] = skeletonHelper;
         squel[i].visible = isSkeletonVisible;
 
-        //m.rotation.y = (Math.random()*360) * ToRad;
-
-        /*m.position.x = -rx;
-        if(rand!==4)m.position.y = 5.5;
-        else m.position.y = 1;*/
         m.position.x = -10+i*5;
 
-        //m.position.copy( Orbit(center,rz,rx, 105));
-        m.castShadow = true;//
+        m.castShadow = true;
         m.receiveShadow = true;
-        nnn = Math.round(Math.random()*5);
+        
+        nnn = Math.round(Math.random()*7);
         if(nnn==0) anim = "droid/idle";
         if(nnn==1) anim = "droid/walk";
         if(nnn==2) anim = "droid/crouchWalk";
         if(nnn==3) anim = "droid/waterSwim";
         if(nnn==4) anim = "droid/fallBack";
         if(nnn==5) anim = "droid/fallFace";
+        if(nnn==6) anim = "droid/trowGrenade";
+        if(nnn==7) anim = "droid/crouchGrenade";
 
         var animation = new THREE.Animation( m, anim );
         animation.play( 10 * Math.random() );
         scene.add(m); 
 
-       // myModel = m;
         meshs[i] = m;
-
-        //m.setWeightByName("droid001", 1);
-
-        
     }
 }
 
