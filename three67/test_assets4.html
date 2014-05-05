@@ -10,6 +10,7 @@
     input{ margin:0; padding:4px; height:30px;}
     #interface{ position: absolute; left:0px; top:90px; width:0px; height:0px; }
     #info{ pointer-events:none; position: absolute; left:10px; top:15px; width: 140px; height: 120px; }
+    #logo{ pointer-events:none; position: absolute; left:-10px; bottom:-10px; width: 300px; height: 150px; }
 </style>
 
 <script src="build/three.min.js"></script>
@@ -22,101 +23,7 @@
 <div id='container'></div>
 <div id="info"></div>
 <div id='interface'></div>
-
-<!--++++++++++++++++++++++++++++++++-->
-<!--          OIMO WORKER           -->
-<!--++++++++++++++++++++++++++++++++-->
-
-<script id="workerOimo" type="javascript/worker">    
-/*var world = null;
-var timestep = 1/60;
-var perf = "";
-var body = [];
-
-self.onmessage = function(e) {
-    var ToRad = Math.PI / 180;
-    var matrixs = e.data.matrixs;
-    var rvoVel = e.data.rvoVel;
-    var N = e.data.N;
-
-    if ( world == null && e.data.url !== "") {
-        // Load oimo script
-        importScripts(e.data.url);
-        
-        // Init physics
-        OIMO.WORLD_SCALE = 1;
-        OIMO.INV_SCALE = 1;
-        world = new OIMO.World(e.data.dt, 2, 8);
-        world.gravity.init(0,-10,0);
-
-        // Ground plane
-        var ground = new OIMO.Body({size:[140.8, 10, 70.4], pos:[0,-5,0], world:world, config:[0, 0.3, 0.1]});
-
-        // wall
-        var w1 = new OIMO.Body({size:[140.8, 20, 3.2], pos:[0,10,36.8], world:world, config:[0, 0.3, 0.1]});
-        var w2 = new OIMO.Body({size:[140.8, 20, 3.2], pos:[0,10,-36.8], world:world, config:[0, 0.3, 0.1]});
-        var w3 = new OIMO.Body({size:[3.2, 20, 76.8], pos:[72,10,0], world:world, config:[0, 0.3, 0.1]});
-        var w4 = new OIMO.Body({size:[3.2, 20, 76.8], pos:[-72,10,0], world:world, config:[0, 0.3, 0.1]});
-
-        var vx, vy, rx, ry, r;
-        for(var i=0; i!==N; i++){
-            if(i >= N*0.5) {
-                vx =-10+Math.random()*20;
-                vy =-10+Math.random()*20;
-                body[i] = new OIMO.Body({type:'sphere', size:[0.5], pos:[vx, 0.5,vy], move:true, world:world, config:[1, 0.1, 0.7]});
-            }else{
-                vx = (Math.cos(i * 2 * Math.PI /( N*0.5)))*30;
-                vy = (Math.sin(i * 2 * Math.PI /( N*0.5)))*30;
-                r = Math.atan2(vx, vy);
-
-                //body[i] = new OIMO.Body({type:'box', size:[0.5,  1,  0.5], pos:[vx,0.51,vy], rot:[0, r*(180 / Math.PI),0], move:true, noSleep:true, world:world, config:[10, 0.3, 0.1]});
-                body[i] = new OIMO.Body({type:'box', size:[0.5,  2,  0.5], pos:[vx,1,vy], rot:[0, r*(180 / Math.PI),0], move:true, noSleep:true, world:world, config:[10, 0.3, 0.1]});
-            } 
-        }
-    } else { // loop
-
-        world.step();
-
-        var i = N;
-        var m, j, b;
-
-        while(i--){
-            j = 16;
-            if(body[i]){
-            b = body[i].body;
-            m = b.getMatrix();
-            while(j--){
-                matrixs[(16*i) + j] = m[j];
-            } 
-            if(i < N*0.5){
-
-                b.linearVelocity.x = rvoVel[(i*3)+0]/timestep;
-                b.linearVelocity.z = rvoVel[(i*3)+1]/timestep;
-
-                b.angularVelocity.y = rvoVel[(i*3)+2]/timestep;
-
-                b.orientation.x = 0;
-                // b.orientation.y = 1;
-                b.orientation.z = 0;
-                //b.orientation.s = rvoVel[(i*3)+2]/timestep;
-
-                //b.orientation.normalize(b.orientation);
-            }  
-        }
-    }
-
-    perf = world.performance.fpsint;
-
-    }
-    // Send data back to the main thread
-    self.postMessage({ perf:perf, matrixs:matrixs }, [matrixs.buffer]);
-};*/
-</script>
-
-<!--++++++++++++++++++++++++++++++++-->
-<!--         MAIN SCRIPT            -->
-<!--++++++++++++++++++++++++++++++++-->
-
+<div id='logo'><object type="image/svg+xml" data="res/three.svg" id="logo"> </object></div>
 <script>
 
 // Parameters
@@ -137,60 +44,6 @@ var myModel;
 var nloop = 0;
 
 window.onload = init;
-
-//OIMO worker var
-/*var dt = 1/60, N=200;
-var matrixs = new Float32Array(N*16);
-var workerOimo = new Worker(window.URL.createObjectURL( new Blob([document.querySelector('#workerOimo').textContent], {type:'text/javascript'}) ));
-workerOimo.postMessage = workerOimo.webkitPostMessage || workerOimo.postMessage;
-var oimoSendTime; // time when we sent last message
-var oimoInfo = 0; // fps info 
-var oimoMeshes=[];
-
-
-
-//-----------------------------------
-//
-//   OIMO WORKER 
-//
-//-----------------------------------
-
-workerOimo.onmessage = function(e) {
-    // Get fresh data from the worker
-    matrixs = e.data.matrixs;
-    i = N;
-    while(i--){
-        var m = [];
-        var mtx = new THREE.Matrix4();
-        j = 16;
-        while(j--) m[j] = matrixs[16*i + j];
-        mtx.fromArray( m );
-        oimoMeshes[i].position.setFromMatrixPosition( mtx )
-        oimoMeshes[i].rotation.setFromRotationMatrix( mtx );
-    }
-
-    var delay = dt * 1000 - (Date.now()-oimoSendTime);
-    if(delay < 0) delay = 0;
-
-    oimoInfo = e.data.perf;
-    
-    setTimeout(sendDataToOimoWorker, delay);
-}
-
-function sendDataToOimoWorker(url){
-    oimoSendTime = Date.now();
-    workerOimo.postMessage({ N: N, dt: dt, url: url || "", key:key, matrixs: matrixs },[matrixs.buffer]);
-}
-
-function initOimoWorker (){
-    sendDataToOimoWorker(document.location.href.replace(/\/[^/]*$/,"/") + "build/oimo.min.js");
-}
-*/
-//-----------------------------------
-//
-//   THREE JS SIDE 
-//
-//-----------------------------------
 
 function init() {
     if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
@@ -213,10 +66,8 @@ function init() {
     container = document.getElementById("container");
     container.appendChild( renderer.domElement );
 
-    
-
-    //renderer.gammaInput = true;
-    //renderer.gammaOutput = true;
+    renderer.gammaInput = true;
+    renderer.gammaOutput = true;
     renderer.shadowMapCullFace = THREE.CullFaceBack;
     renderer.shadowMapEnabled = true;
     renderer.autoClearColor = false;
@@ -285,8 +136,6 @@ function init() {
     // events
     var body = document.body;
     window.addEventListener( 'resize', resize, false );
-    window.addEventListener( 'keydown', onKeyDown, false );
-    window.addEventListener( 'keyup', onKeyUp, false );
     container.addEventListener( 'mousemove', onMouseMove, false );
     container.addEventListener( 'mousedown', onMouseDown, false );
     container.addEventListener( 'mouseout', onMouseUp, false );
@@ -331,7 +180,6 @@ function displayInfo(){
     var txtinfo =[
         "<h3>DROID LAB</h3><br>",
         sourceInfo,
-        //"Oimo Physics: " + oimoInfo +" fps<br>",
         "Three Render: " + fps[3] +" fps"
     ].join("\n");
     info.innerHTML = txtinfo;
@@ -364,23 +212,18 @@ function populate(){
 
     var model = pool.getGeometry("droid");
 
-
-    console.log(pool.models[0].anim);
-    console.log(pool.models[0].morph);
+    //console.log(pool.models[0].anim);
+    //console.log(pool.models[0].morph);
     //console.log(Pool.models[0].name);
 
-    var i, rx, rz, m, w, s;
-
-    var nnn, anim, rand, bone;
+    var i, m, s;
+    var nnn, anim;
     var num = 5;
 
     var skeletonHelper;
     
 
     for(i=0; i<num; i++){
-        rand = Math.floor(Math.random()*5);
-        rx =  -10+(Math.random()*20);
-        rz =  -10+(Math.random()*20);
         s = 0.05
 
         m = new THREE.SkinnedMesh(model, mat, false );
@@ -393,10 +236,9 @@ function populate(){
         squel[i].visible = isSkeletonVisible;
 
         m.position.x = -10+i*5;
-
         m.castShadow = true;
         m.receiveShadow = true;
-        
+
         nnn = Math.round(Math.random()*7);
         if(nnn==0) anim = "droid/idle";
         if(nnn==1) anim = "droid/walk";
@@ -471,44 +313,6 @@ function onMouseWheel(e) {
     if(cam.distance<0.01)cam.distance = 0.01;
     if(cam.distance>150)cam.distance = 150;
     moveCamera(); 
-}
-
-//-----------------------------------
-// KEYBOARD 
-//-----------------------------------
-
-function onKeyDown( e ) {
-    switch ( e.keyCode ) {
-        case 38:case 87:case 90: key[0]=1; break; // up, W, Z
-        case 40:case 83:         key[1]=1; break; // down, S
-        case 37:case 65:case 81: key[2]=1; break; // left, A, Q
-        case 39:case 68:         key[3]=1; break; // right, D
-        case 17:case 67:         key[4]=1; break; // ctrl, c
-        case 32:                 key[5]=1; break; // space
-        case 96:case 48:  key[6]=0; break; //0
-        case 97:case 49:  key[6]=1; break; //1
-        case 98:case 50:  key[6]=2; break; //2
-        case 99:case 51:  key[6]=3; break; //3
-        case 100:case 52: key[6]=4; break; //4
-        case 101:case 53: key[6]=5; break; //5
-        case 102:case 54: key[6]=6; break; //6
-        case 103:case 55: key[6]=7; break; //7
-        case 104:case 56: key[6]=8; break; //8
-        case 105:case 57: key[6]=9; break; //9
-    }
-    //KEY(key);
-}
-
-function onKeyUp( e ) {
-    switch( e.keyCode ) {
-        case 38:case 87:case 90: key[0]=0; break; // up, W, Z
-        case 40:case 83:         key[1]=0; break; // down, S
-        case 37:case 65:case 81: key[2]=0; break; // left, A, Q
-        case 39:case 68:         key[3]=0; break; // right, D
-        case 17:case 67:         key[4]=0; break; // ctrl, c
-        case 32:                 key[5]=0; break; // space
-    }
-    //KEY(key);
 }
 
 </script>

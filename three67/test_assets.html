@@ -10,6 +10,7 @@
     input{ margin:0; padding:4px; }
     #interface{ position: absolute; left:90px; top:10px; width:80px; height:20px; }
     #info{ pointer-events:none; position: absolute; left:10px; top:10px; width: 400px; height: 400px; }
+    #logo{ pointer-events:none; position: absolute; left:-10px; bottom:-10px; width: 300px; height: 150px; }
 </style>
 
 <script src="build/three.min.js"></script>
@@ -24,6 +25,7 @@
 <div id='interface'>
     <input type="button" value="skeleton on" onClick=togleSkeleton()  id='bskeleton'>
 </div>
+<div id='logo'><object type="image/svg+xml" data="res/three.svg" id="logo"></object></div>
 
 <script>
 

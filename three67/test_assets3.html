@@ -10,6 +10,7 @@
     input{ margin:0; padding:4px; }
     #interface{ position: absolute; left:10px; top:10px; width:456px; height:20px; }
     #info{ pointer-events:none; position: absolute; left:10px; top:10px; width: 400px; height: 400px; }
+    #logo{ pointer-events:none; position: absolute; left:-10px; bottom:-10px; width: 300px; height: 150px; }
 </style>
 
 <script src="build/three.min.js"></script>
@@ -20,9 +21,8 @@
 </head>
 <body>
 <div id='container'></div>
-<div id="info">
-    Oimo.js web worker example
-</div>
+<div id="info"></div>
+<div id='logo'><object type="image/svg+xml" data="res/three.svg" id="logo"></object></div>
 
 
 <!--++++++++++++++++++++++++++++++++-->
