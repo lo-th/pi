@@ -9,7 +9,7 @@
     body { background-color: #383838; overflow: hidden; color: #eeeeee; font-family: monospace; font-size: 12px; }
     input{ margin:0; padding:4px; height:30px;}
     #interface{ position: absolute; left:0px; top:90px; width:0px; height:0px; }
-    #info{ pointer-events:none; position: absolute; left:10px; top:15px; width: 140px; height: 120px; }
+    #info{ pointer-events:none; position: absolute; left:10px; top:15px; width: 250px; height: 120px; }
     #logo{ pointer-events:none; position: absolute; left:-10px; bottom:-10px; width: 300px; height: 150px; }
 </style>
 
@@ -170,7 +170,7 @@ function loop() {
     }
     }
     renderer.render( scene, camera );
-    displayInfo()
+    displayInfo();
 }
 
 function displayInfo(){
@@ -178,7 +178,7 @@ function displayInfo(){
     if (fps[2]-1000>fps[1]){ fps[1]=fps[2]; fps[3]=fps[0]; fps[0]=0; } fps[0]++;
 
     var txtinfo =[
-        "<h3>DROID LAB</h3><br>",
+        "<h3>ASSET LAB 4 + MORPH</h3><br>",
         sourceInfo,
         "Three Render: " + fps[3] +" fps"
     ].join("\n");

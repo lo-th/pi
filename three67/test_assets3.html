@@ -219,7 +219,7 @@ var rvoMeshes=[];
 var targetList = [];
 
 var fps=0, time, time_prev=0, fpsint = 0;
-var bgcolor = 0x383838;
+var bgcolor = 0x606060;
 
 //OIMO worker var
 /*var dt = 1/60, N=200;
@@ -236,7 +236,7 @@ var rvoTarget = [0,0];
 var rvoMatrixs = new Float32Array(Nagent*6);
 var rvoVel = new Float32Array(Nagent*3);
 var oldTime = 0;
-var workerRvo = new Worker(window.URL.createObjectURL(new Blob([document.querySelector('#workerRvo').textContent])));
+var workerRvo = new Worker(window.URL.createObjectURL(new Blob([document.querySelector('#workerRvo').textContent], {type : 'text/javascript'}) ));
 workerRvo.postMessage = workerRvo.webkitPostMessage || workerRvo.postMessage;
 var rvoSendTime; // time when we sent last message
 var rvoInfo = 0; // fps info 
@@ -348,8 +348,7 @@ function init() {
     projector = new THREE.Projector();
 
     // camera
-    camera = new THREE.PerspectiveCamera( 30, window.innerWidth / window.innerHeight, 0.5, 10000 );
-    camera.position.set( 0, 30, 100 );
+    camera = new THREE.PerspectiveCamera( 30, window.innerWidth / window.innerHeight, 0.5, 1000 );
     center = new THREE.Vector3(0,0.5,0);
     moveCamera();
 
@@ -382,7 +381,7 @@ function init() {
     scene.add( light );
 
     var backMat = new THREE.MeshBasicMaterial( { color: bgcolor, side:THREE.BackSide, depthWrite: false } );
-    var backGeo = new THREE.Mesh( new THREE.SphereGeometry( 2000, 6, 6 ), backMat );
+    var backGeo = new THREE.Mesh( new THREE.SphereGeometry( 500, 6, 6 ), backMat );
     scene.add( backGeo );
 
     var material = new THREE.MeshBasicMaterial( { color: bgcolor } );
@@ -531,7 +530,7 @@ function displayInfo(){
     } fps++;
 
     var info =[
-        "<h3>SPIDER LAB</h3><br>",
+        "<h3>ASSET LAB 3 + RVO</h3><br>",
         //"<br>Oimo Physics: " + oimoInfo +" fps<br>",
         "Rvo simulator: " + rvoInfo +" fps<br>",
         "Three Render: " + fpsint +" fps<br>"

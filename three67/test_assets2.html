@@ -8,7 +8,7 @@
     * {  margin: 0; padding: 0; border: 0;}
     body { background-color: #383838; overflow: hidden; color: #eeeeee; font-family: monospace; font-size: 12px; }
     input{ margin:0; padding:4px; }
-    #interface{ position: absolute; left:90px; top:10px; width:80px; height:20px; }
+    #interface{ position: absolute; left:0px; top:90px; width:0px; height:0px; }
     #info{ pointer-events:none; position: absolute; left:10px; top:10px; width: 400px; height: 400px; }
     #logo{ pointer-events:none; position: absolute; left:-10px; bottom:-10px; width: 300px; height: 150px; }
 </style>
@@ -17,14 +17,12 @@
 <script src="build/sea3d.min.js"></script>
 <script src="js/Detector.js"></script>
 <script src="js/BufferGeometryUtils.js"></script>
-<script src="js/libs/stats.min.js"></script>
+<script src="js/miniGUI.js"></script>
 </head>
 <body>
 <div id='container'></div>
 <div id="info"></div>
-<div id='interface'>
-    <input type="button" value="skeleton on" onClick=togleSkeleton()  id='bskeleton'>
-</div>
+<div id='interface'></div>
 <div id='logo'><object type="image/svg+xml" data="res/three.svg" id="logo"></object></div>
 
 <script>
@@ -32,24 +30,25 @@
 // Parameters
 var ToRad = Math.PI / 180;
 var info = document.getElementById("info");
+var menu = document.getElementById("interface");
 var sourceInfo = "";
 
 // THREE var
-var container, camera, scene, renderer, cam, mouse;
-
-var fps=0, time, time_prev=0, fpsint = 0;
+var container, camera, scene, renderer, cam, mouse, clock;
+var fps = [0,0,0,0];
 var bgcolor = 0x606060;
-var clock;
-var stats;
 var meshs = [];
 var squel = [];
+var nloop = 0;
 var Pool;
-var isSkeletonVisible = true;
+var isSkeletonVisible = false;
 
-init();
+window.onload = init;
 
 function init() {
     if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+
+    var b1 = new miniGUI.OnOff ({ container:menu, value:isSkeletonVisible, y:10,name:"Skeleton", onChange: function(value){ toogleSkeleton(value) } });
 
     cam = { horizontal: 120, vertical: 80, distance: 200, automove: false };
     mouse = { ox:0, oy:0, h:0, v:0, mx:0, my:0, down:false, over:false, moving:true };
@@ -75,7 +74,6 @@ function init() {
 
     // camera
     camera = new THREE.PerspectiveCamera( 30, window.innerWidth / window.innerHeight, 0.5, 1000 );
-    camera.position.set( 0, 30, 100 );
     center = new THREE.Vector3();
     moveCamera();
 
@@ -145,11 +143,6 @@ function init() {
         body.attachEvent("onmousewheel" , onMouseWheel); // ie
     }
 
-    stats = new Stats();
-                stats.domElement.style.position = 'absolute';
-                stats.domElement.style.top = '0px';
-                container.appendChild( stats.domElement );
-
     loop();
 }
 
@@ -158,9 +151,6 @@ function resize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
 }
-
-var nloop = 0;
-
 
 function loop() {
     requestAnimationFrame( loop );
@@ -176,7 +166,19 @@ function loop() {
     }
     }
     renderer.render( scene, camera );
-    stats.update();
+    displayInfo();
+}
+
+function displayInfo(){
+    fps[2] = Date.now();
+    if (fps[2]-1000>fps[1]){ fps[1]=fps[2]; fps[3]=fps[0]; fps[0]=0; } fps[0]++;
+
+    var txtinfo =[
+        "<h3>ASSET LAB 2</h3><br>",
+        sourceInfo,
+        "Three Render: " + fps[3] +" fps"
+    ].join("\n");
+    info.innerHTML = txtinfo;
 }
 
 
@@ -184,12 +186,10 @@ function loop() {
 // SEA3D
 //--------------------------------
 
-function togleSkeleton(){
-    var base = document.getElementById("bskeleton");
-    if(isSkeletonVisible){ isSkeletonVisible = false;  base.value = "skeleton off";}
-    else {isSkeletonVisible = true;  base.value = "skeleton on";}
+function toogleSkeleton(value){
     for(var i=0, j=squel.length; i<j; i++){
-        squel[i].visible = isSkeletonVisible;
+        isSkeletonVisible = value;
+        squel[i].visible = value;
     }
 }
 
@@ -227,6 +227,7 @@ function populate(){
         skeletonHelper.material.linewidth = 3;
         m.add( skeletonHelper );
         squel[i] = skeletonHelper;
+        squel[i].visible = isSkeletonVisible;
 
         m.rotation.y = (Math.random()*360) * ToRad;
 
