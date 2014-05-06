@@ -49,6 +49,14 @@ miniGUI.Slide.prototype = {
         this.zone.addEventListener('mousedown', function ( e ) { e.preventDefault(); _this.isMove = true; _this.move(e); }, false);
         this.zone.addEventListener('mouseup'  , function ( e ) { e.preventDefault(); _this.isMove = false;}, false);
     },
+    set:function(v){
+        this.value = Math.round(v*100)/100;//v.toFixed(2);
+        if(this.value<0)this.value=0;
+        if(this.value>1)this.value=1;
+        this.col.style.width = this.value*100+"px";
+        this.pin.style.left = 10+this.value*100+"px";
+        this.txt.textContent = this.name + ":"+ this.value;
+    },
     over:function(e, t){
         this.bg.style.backgroundColor = 'rgba(0,0,0,0.5)'; 
         this.col.style.backgroundColor = 'rgba(55,123,167,1)';  
@@ -60,12 +68,7 @@ miniGUI.Slide.prototype = {
     },
     move:function(e){
         if(this.isMove){
-            this.value = (e.offsetX-10)/100;
-            if(this.value<0)this.value=0;
-            if(this.value>1)this.value=1;
-            this.col.style.width = this.value*100+"px";
-            this.pin.style.left = 10+this.value*100+"px";
-            this.txt.textContent = this.name + ":"+ this.value;
+            this.set((e.offsetX-10)/100)
             this.onChange(this.value);
         }
     }
