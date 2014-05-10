@@ -67,7 +67,7 @@
 	var easeRot = { x:0, y:0, z:0, deg:0 };
 	var mouse = { down:false, ox:0, oy:0, h:0, v:0, mx:0, my:0 };
 
-	var Colors = [0x48608c, 0x48608c, 0xAAAAAA];
+	var Colors = [0x000000, 0x343738, 0x586d6f, 0xffffff  ];
 	//---------- Bakground, Ambient, Specular
 
 	// map2d
@@ -143,7 +143,7 @@
 		renderer.gammaInput = true;
 
 		
-		//renderer.shadowMapCullFace = THREE.CullFaceBack;
+		renderer.shadowMapCullFace = THREE.CullFaceBack;
 
 		scene = new THREE.Scene();
 
@@ -169,26 +169,33 @@
 		ambient = new THREE.AmbientLight( Colors[1] );
 		scene.add( ambient );
 
-		/*hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 1 );
-		hemiLight.position.set( 0, 0, 0 );
+		/*hemiLight = new THREE.HemisphereLight( 0x586d6f, 0x343738, 1 );
+		hemiLight.position.set( 0, 1, 0 );
 		scene.add( hemiLight );*/
 
-		pointLight = new THREE.PointLight( 0x000, 0.5, 3000*worldSize );
-		pointLight.position.set( -1000*worldSize, 500*worldSize, -1000*worldSize );
+		pointLight = new THREE.PointLight( Colors[2], 3, 6000*worldSize );
+		pointLight.position.set( -2000*worldSize, 1000*worldSize, 1000*worldSize );
 		scene.add( pointLight );
 
-		spotLight = new THREE.SpotLight( 0xffffff );
-		spotLight.intensity = 1.2;
-		spotLight.position.set(1000*worldSize,1500*worldSize,500*worldSize);
+		//spotLight = new THREE.SpotLight( Colors[3] );
+		spotLight = new THREE.DirectionalLight( Colors[3] , 1.3 );
+		//spotLight.intensity = 2;
+		spotLight.position.set(2000*worldSize,2500*worldSize,-1500*worldSize);
 		//spotLight.target = player;
 		spotLight.castShadow = true;
 
-		spotLight.shadowCameraNear = 1000*worldSize;
-		spotLight.shadowCameraFar = 3000*worldSize;
-		spotLight.shadowCameraFov = 75;
 
-		spotLight.shadowMapBias = 0.01;
-		spotLight.shadowMapDarkness = 0.7;
+		spotLight.shadowCameraNear = 1000*worldSize;
+		spotLight.shadowCameraFar = 7000*worldSize;
+		//spotLight.shadowCameraFov = 60;
+		var d = 3000*worldSize;
+		spotLight.shadowCameraLeft = -d;
+		spotLight.shadowCameraRight = d;
+		spotLight.shadowCameraTop = d;
+		spotLight.shadowCameraBottom = -d;
+
+		spotLight.shadowBias = 0.01;
+		spotLight.shadowDarkness = 0.35;
 		spotLight.shadowMapWidth = 1024;
 		spotLight.shadowMapHeight = 1024;
 
@@ -617,10 +624,10 @@
 	//-----------------------------------------------------
 
 	function initMaterial() {
-		materials[0] = makeMaterial({ map:textures[0], bump:true, bumpScale:10, shininess:10, reflectivity:0.2 });
-		materials[1] = makeMaterial({ map:textures[1], bump:true, bumpScale:5, shininess:60 , reflectivity:0.2});
-		materials[2] = makeMaterial({ map:textures[2], bump:true, bumpScale:2, shininess:10 , reflectivity:0.2});
-		materials[3] = makeMaterial({ map:textures[3], bump:true, bumpScale:2, shininess:10 , transparent:true, side:THREE.DoubleSide });
+		materials[0] = makeMaterial({ map:textures[0], bump:true, bumpScale:0.1, shininess:10});
+		materials[1] = makeMaterial({ map:textures[1], bump:true, bumpScale:0.1, shininess:60});
+		materials[2] = makeMaterial({ map:textures[2], bump:true, bumpScale:0.1, shininess:10});
+		materials[3] = makeMaterial({ map:textures[3], bump:true, bumpScale:0.1, shininess:10 , transparent:true, side:THREE.DoubleSide });
 		materials[4] = makeMaterial({ color:0x909090, transparent:true, opacity:0.5, side:THREE.DoubleSide, reflectivity:0.96 }); // window
 		materials[5] = makeMaterial({ color:0xb18954, side:THREE.DoubleSide }); // cadre
 		materials[6] = makeMaterial({ color:0x909090 }); // wall
@@ -645,7 +652,7 @@
 		    material.map = mmap;
 		}
 
-		if(data.bump && data.mmap){
+		if(data.bump && mmap){
 			 material.bumpMap = mmap;
 			 material.bumpScale = data.bumpScale || 1;
 		}
@@ -911,110 +918,5 @@
 		p.y = (distance * Math.cos(phi)) + origine.y;
 		return p;
 	}
-
-	
-
-
-
-//
-	/*var rays = [
-        new THREE.Vector3(0, 0, 1),
-        new THREE.Vector3(1, 0, 1),
-        new THREE.Vector3(1, 0, 0),
-        new THREE.Vector3(1, 0, -1),
-        new THREE.Vector3(0, 0, -1),
-        new THREE.Vector3(-1, 0, -1),
-        new THREE.Vector3(-1, 0, 0),
-        new THREE.Vector3(-1, 0, 1)
-    ];
-    var caster = new THREE.Raycaster();
-    var lineContener;
-    var lines = [];
-    var ball = [];
-    
-    var rayPosY = -50;
-    var isWithRayTest = false;
-    
-    var linesMaterial = [];
-
-	function rayFullTest(){
-		var collisions, i, distance = 30;
-		for ( i = 0; i < rays.length; i ++) {
-			//var vector = new THREE.Vector3(lineContener.position.x+(rays[i].x*distance),lineContener.position.y, lineContener.position.z+(rays[i].z*distance));
-			//vector.add(lineContener.position);
-			caster.set(lineContener.position, rays[i].normalize());
-			collisions = caster.intersectObjects( content.children );
-			if (collisions.length > 0) {
-                if(collisions[0].distance < distance){
-					lines[i].material = linesMaterial[2];
-					lines[i].geometry.vertices[1].set(rays[i].x*collisions[0].distance, 0, rays[i].z*collisions[0].distance);
-					ball[i].material = linesMaterial[5];
-					ball[i].position.set(rays[i].x*collisions[0].distance, 0, rays[i].z*collisions[0].distance);
-				} else {
-					lines[i].material = linesMaterial[1];
-					lines[i].geometry.vertices[1].set(rays[i].x*collisions[0].distance, 0, rays[i].z*collisions[0].distance);
-					ball[i].material = linesMaterial[4];
-					ball[i].position.set(rays[i].x*collisions[0].distance, 0, rays[i].z*collisions[0].distance);
-				}
-				
-				 // Yep, this.rays[i] gives us : 0 => up, 1 => up-left, 2 => left, ...
-                //if ((i === 0 || i === 1 || i === 7) && direction.z === 1) {
-                //    direction.setZ(0);
-                //} else if ((i === 3 || i === 4 || i === 5) && direction.z === -1) {
-                //    direction.setZ(0);
-                //}
-                //if ((i === 1 || i === 2 || i === 3) && direction.x === 1) {
-                //    direction.setX(0);
-                //} else if ((i === 5 || i === 6 || i === 7) && direction.x === -1) {
-                //    direction.setX(0);
-                //}
-
-			} else {
-				lines[i].material = linesMaterial[0];
-				lines[i].geometry.vertices[1].set(rays[i].x*distance, 0, rays[i].z*distance);
-				ball[i].material = linesMaterial[3];
-				ball[i].position.set(rays[i].x*distance, 0, rays[i].z*distance);
-			}
-			lines[i].geometry.verticesNeedUpdate = true;
-		}
-
-	}
-
-	function drawRayTest(){
-		var distance = 10;
-		var geometry;
-		linesMaterial[0] = new THREE.LineBasicMaterial({ color: 0x0000ff });
-		linesMaterial[1] = new THREE.LineBasicMaterial({ color: 0x00ff00 });
-		linesMaterial[2] = new THREE.LineBasicMaterial({ color: 0xff0000 });
-
-		linesMaterial[3] = new THREE.MeshBasicMaterial({ color: 0x0000ff });
-		linesMaterial[4] = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-		linesMaterial[5] = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-
-		for ( var i = 0; i < rays.length; i ++) {
-			geometry = new THREE.Geometry();
-			geometry.vertices.push(new THREE.Vector3(0, 0, 0));
-			geometry.vertices.push(new THREE.Vector3(rays[i].x*distance, 0, rays[i].z*distance));
-			geometry.dynamic = true;
-			lines[i] = new THREE.Line( geometry, linesMaterial[0] );
-			ball[i] = new THREE.Mesh(  new THREE.SphereGeometry(1,6,6), linesMaterial[3] ); 
-			ball[i].position.set(rays[i].x*distance, 0, rays[i].z*distance);
-			lineContener.add(lines[i]);
-			lineContener.add(ball[i]);
-	    }
-	}
-
-	function activRayTest(){
-		if(!isWithRayTest){
-			isWithRayTest = true;
-			lineContener = new THREE.Object3D();
-			scene.add(lineContener);
-			drawRayTest();
-		} else {
-			isWithRayTest = false;
-			scene.remove(lineContener);
-		}
-
-	}*/
 
 </script></body></html>
