@@ -8,6 +8,8 @@ miniGUI.Slide = function(obj){
     this.pin = null;
     this.txt = null;
     this.name = obj.name || "slider";
+    this.color = obj.color || [55,123,167];
+    this.id =  obj.id || 0;
     this.x = obj.x || 0;
     this.y = obj.y || 0;
     this.isMove = false;
@@ -22,7 +24,7 @@ miniGUI.Slide.prototype = {
     init:function(){
         var _this = this;
         this.zone = document.createElement('div');
-        this.zone.style.cssText = "position:absolute; left:"+this.x+"px; top:"+this.y+"px; width:120px; height:30px; cursor:pointer; ";
+        this.zone.style.cssText = "position:absolute; left:"+this.x+"px; top:"+this.y+"px; width:120px; height:30px; cursor:pointer;";
         this.zone.id="name";
         this.container.appendChild(this.zone);
 
@@ -31,7 +33,8 @@ miniGUI.Slide.prototype = {
         this.zone.appendChild(this.bg);
 
         this.col = document.createElement('div');
-        this.col.style.cssText = "position:absolute; left:10px; top:18px; width:"+this.value*100+"px; height:4px; pointer-events:none; background-color:rgba(55,123,167,0.5);";
+        this.col.style.cssText = "position:absolute; left:10px; top:18px; width:"+this.value*100+"px; height:4px; pointer-events:none; ";
+        this.col.style.backgroundColor = 'rgba('+this.color[0]+','+this.color[1]+','+this.color[2]+',0.5)';
         this.zone.appendChild(this.col);
 
         this.pin = document.createElement('div');
@@ -39,7 +42,7 @@ miniGUI.Slide.prototype = {
         this.zone.appendChild(this.pin);
 
         this.txt = document.createElement('div');
-        this.txt.style.cssText = "position:absolute; left:10px; top:0px; width:120px; height:10px; pointer-events:none; color:#eeeeee; font-family: monospace; font-size:12px;";
+        this.txt.style.cssText = "position:absolute; left:10px; top:0px; width:120px; height:10px; pointer-events:none; font-size:11px;";
         this.zone.appendChild(this.txt);
         this.txt.textContent = this.name+ ":"+ this.value;
 
@@ -59,12 +62,12 @@ miniGUI.Slide.prototype = {
     },
     over:function(e, t){
         this.bg.style.backgroundColor = 'rgba(0,0,0,0.5)'; 
-        this.col.style.backgroundColor = 'rgba(55,123,167,1)';  
+        this.col.style.backgroundColor = 'rgba('+this.color[0]+','+this.color[1]+','+this.color[2]+',1)';  
     },
     out:function(e, t){
         this.isMove = false;
         this.bg.style.backgroundColor = 'rgba(0,0,0,0.1)';
-        this.col.style.backgroundColor = 'rgba(55,123,167,0.5)';
+        this.col.style.backgroundColor = 'rgba('+this.color[0]+','+this.color[1]+','+this.color[2]+',0.5)';
     },
     move:function(e){
         if(this.isMove){
@@ -98,7 +101,7 @@ miniGUI.OnOff.prototype = {
         var p = 0;
         if(this.value){tx = "on"; p = 30;}
         this.zonen = document.createElement('div');
-        this.zonen.style.cssText = "position:absolute; left:"+this.x+"px; top:"+this.y+"px; width:120px; height:30px; cursor:pointer; ";
+        this.zonen.style.cssText = "position:absolute; left:"+this.x+"px; top:"+this.y+"px; width:120px; height:30px; cursor:pointer;";
         this.container.appendChild(this.zonen);
 
         this.bg = document.createElement('div');
@@ -114,7 +117,7 @@ miniGUI.OnOff.prototype = {
         this.zonen.appendChild(this.pin);
 
         this.txt = document.createElement('div');
-        this.txt.style.cssText = "position:absolute; left:10px; top:0px; width:120px; height:10px; pointer-events:none; color:#eeeeee; font-family: monospace; font-size:12px;";
+        this.txt.style.cssText = "position:absolute; left:10px; top:0px; width:120px; height:10px; pointer-events:none; font-size:11px;";
         this.zonen.appendChild(this.txt);
         
         this.txt.textContent = this.name+ " "+ tx;
