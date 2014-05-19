@@ -1,40 +1,38 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<title>WarGame</title>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<meta charset="UTF-8" />
+<title>War Game</title>
+<meta name="Description" content="" />
+<meta name="Keywords"  content="" />
 <style>
-    * {  margin:0; padding:0; border:0;}
-    body { background-color:#444444; overflow:hidden; color:#c8c8c8; font-family:Verdana; font-size:12px; }
-    #container { overflow:hidden; }
-    #interface{ position:absolute; left:0; top:90px; width:0px; height:0px; }
-    #info{ pointer-events:none; position:absolute; left:10px; top:10px; width:400px; height:400px; }
-    #logo{ pointer-events:none; position:absolute; left:-10px; bottom:-10px; width:300px; height:150px; }
+    * {  margin: 0; padding: 0; border: 0;}
+    body { background-color: #444444; overflow: hidden; color:#c8c8c8; font-family:Verdana; font-size: 12px; }
+    input{ margin:0; padding:4px; }
+    #interface{ position: absolute; left:0px; top:90px; width:0px; height:0px; }
+    #info{ pointer-events:none; position: absolute; left:10px; top:10px; width: 400px; height: 400px; }
+    #logo{ pointer-events:none; position: absolute; left:-10px; bottom:-10px; width: 300px; height: 150px; }
 </style>
 
 <script src="js/three.min.js"></script>
-<script src="js/controls/OrbitControls.js"></script>
 <script src="js/loaders/sea3d.min.js"></script>
 <script src="js/Detector.js"></script>
 <script src="js/miniGUI.js"></script>
 
 </head>
-
-<!-- Author CODE & MODEL: loth - http://3dflashlo.wordpress.com/ -->
-<!-- Author BOID WAR: akm2 - http://jsdo.it/akm2/                -->
-
 <body>
 <div id='container'></div>
 <div id="info"></div>
 <div id='interface'></div>
 <div id='logo'><object type="image/svg+xml" data="assets/sea3db.svg" id="logo"></object></div>
 
-<!--                                -->
+<!--++++++++++++++++++++++++++++++++-->
 <!--           WAR WORKER           -->
-<!--                                -->
+<!--++++++++++++++++++++++++++++++++-->
 
 <script id="workerWar" type="javascript/worker">
+
+// BOID WAR Author akm2 - http://jsdo.it/akm2
 
 var simulator = null;
 var perf = "";
@@ -70,6 +68,8 @@ self.onmessage = function(e) {
 
     	t = Date.now();
         simulator.loop();
+        
+        //var clock = 0.001 * (Date.now() - e.data.oldTime);
         deadPool = simulator.deadPool;
         maxBoids = simulator.boids.length;
     	if(e.data.click && maxBoids<SimSetting.max && warMouse[2] !==1 ){simulator.add(warMouse[0], warMouse[1]);}
@@ -84,43 +84,23 @@ self.onmessage = function(e) {
             warMatrixs[(4*i) + 2 ] = p.r;
             warMatrixs[(4*i) + 3 ] = p.type.id;
         }
-    }
-    self.postMessage({ oldTime:t, maxBoids:maxBoids, deadPool:deadPool, warMatrixs:warMatrixs }, [warMatrixs.buffer]);
-}
 
+        //perf = "";//simulator.performance.fpsint;
+       
+    }
+    //oldTime = Date.now();
+    self.postMessage({ oldTime:t, maxBoids:maxBoids, deadPool:deadPool, warMatrixs:warMatrixs }, [warMatrixs.buffer]);
+
+}
 </script>
 
-<!--                                -->
+<!--++++++++++++++++++++++++++++++++-->
 <!--          MAIN SCRIPT           -->
-<!--                                -->
+<!--++++++++++++++++++++++++++++++++-->
 
 <script>
-if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
-
-var info = document.getElementById("info");
-var menu = document.getElementById("interface");
-
-// THREE var
-var container, camera, scene, renderer, controls, mouse, key, clock, contentRay, content, projector, raycaster, marker;
-var vsize = { x:window.innerWidth, y:window.innerHeight, z:window.innerWidth/window.innerHeight };
-var fps = [0,0,0,0];
-var ToRad = Math.PI / 180;
-var bgcolor = 0x444444;
-var meshs = [];
-var deadMeshs = [];
-var deadanim = [];
-var planete;
-var planetegeo;
-var sourceInfo = "";
-var nloop = 0;
-
-// WAR var
-var sim;
-var People = 60;
-var PlaneteSize = 5;
-var PeopleSize = 0.01;
-var hname=[], wgeo=[], hgeo=[], pmat=[], panim=[];
 var SimSetting = { people:30, max:250, worldScale:4 };
+
 var q0 = new THREE.Quaternion();
 var q1 = new THREE.Quaternion();
 var q2 = new THREE.Quaternion();
@@ -135,13 +115,6 @@ var warDeadPool;
 var warMouse = [0,0,0];
 var workerWar = new Worker(window.URL.createObjectURL(new Blob([document.querySelector('#workerWar').textContent], {type : 'text/javascript'}) ));
 workerWar.postMessage = workerWar.webkitPostMessage || workerWar.postMessage;
-
-init();
-loop();
-
-//-----------------------------------
-// WAR WORKER 
-//-----------------------------------
 
 workerWar.onmessage = function(e) {
     // Get fresh data from the worker
@@ -162,18 +135,23 @@ workerWar.onmessage = function(e) {
     		x = -(45+22.5)+(warMatrixs[(4*i) + 1]/SimSetting.worldScale)*0.5;
     		y = (warMatrixs[(4*i) + 0]/SimSetting.worldScale);
     		m.position.copy(latLongToVector3( x,y, PlaneteSize+0.25 ) );
+    		//q0 = new THREE.Quaternion();
             q1.setFromAxisAngle(new THREE.Vector3(0,1,0), warMatrixs[4*i + 2]+(180*ToRad) );
             q2.setFromAxisAngle(new THREE.Vector3(1,0,0), -90*ToRad );
             q0.multiplyQuaternions(q2, q1);
             m.children[0].quaternion.slerp(q0,0.1);
+    		//m.children[0].rotation.y=warMatrixs[(4*i) + 2];
     		m.lookAt(v);
+    		//m.rotation.z = -y * ToRad;
+		    //m.rotation.y = -x * ToRad;
     	}
     }
 
-    sourceInfo ="Polulation:"+e.data.maxBoids+"<br>";
-	var delay = (1000 / 60)- (Date.now()-warSendTime);
-    if(delay < 0) delay = 0;
+    sourceInfo ="Polulation:"+e.data.maxBoids+"<br>";// e.data.perf;
+	var delay = (1000 / 60)- (Date.now()-warSendTime);//dtwar * 1000 - (Date.now()-warSendTime);
+    //if(delay < 0) delay = 0;
 
+    //oldTime = e.data.oldTime;
     setTimeout(sendDataToWarWorker, delay);
 }
 
@@ -183,15 +161,50 @@ function sendDataToWarWorker(url){
     mouse.click = false;
 }
 
-//-----------------------------------
-// THREE JS SIDE 
-//-----------------------------------
+
+// ---------------------------------------------------------
+
+var info = document.getElementById("info");
+var menu = document.getElementById("interface");
+
+// THREE var
+var container, camera, scene, renderer, cam, mouse, key, clock, contentRay, content, projector, raycaster, marker;
+var vsize = { x:window.innerWidth, y:window.innerHeight, z:window.innerWidth/window.innerHeight };
+var fps = [0,0,0,0];
+var ToRad = Math.PI / 180;
+var bgcolor = 0x444444;
+var meshs = [];
+var deadMeshs = [];
+var deadanim=[];
+var planete;
+var planetegeo;
+var axeY, axeZ;
+var sourceInfo = "";
+var nloop = 0;
+
+var sim;
+window.onload = init;
+
+var People = 60;
+var PlaneteSize = 5;
+var PeopleSize = 0.01;
+
+var hname=[], wgeo=[], hgeo=[], pmat=[], panim=[];
 
 function init() {
+	init3D();
+	
+	//initSimulator();
+}
+
+function init3D() {
+    if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
     var g = new miniGUI.OnOff ({ container:menu, value:isPeace, y:0,name:"Peace", onChange: function(value){ isPeace = value; } });
 
-    mouse = { mx:0, my:0, down:false, click:false };
+    cam = { horizontal: 120, vertical: 80, distance: 30, automove: false };
+    mouse = { ox:0, oy:0, h:0, v:0, mx:0, my:0, down:false, click:false, over:false, moving:true };
+    key = [0,0,0,0,0,0,0,0];
 
     clock = new THREE.Clock();
 
@@ -220,13 +233,15 @@ function init() {
 
     // camera
     camera = new THREE.PerspectiveCamera( 30, vsize.z, 0.5, 1000 );
-    camera.position.set( -20, 10, 20 );
-    controls = new THREE.OrbitControls(camera, container);
-    controls.maxDistance = 200;
-    controls.update();
+    center = new THREE.Vector3(0,0,0);
+
+    moveCamera();
+
+    content.add( camera );
 
     projector = new THREE.Projector();
 	raycaster = new THREE.Raycaster();
+
 
     var light, materials;
     scene.add( new THREE.AmbientLight( bgcolor ) );
@@ -258,8 +273,8 @@ function init() {
     lightPoint.position.set( -d/3, -d, -d);
     scene.add( lightPoint );
 
-    // background
-    var backGeo = new THREE.Mesh( new THREE.IcosahedronGeometry(500,1), new THREE.MeshBasicMaterial( { map:gradTexture([[1, 0.5,0], ['#4488ff', '#444444', 'black']]), side:THREE.BackSide, depthWrite: false }  ));
+    var backMat = new THREE.MeshBasicMaterial( { color: bgcolor, side:THREE.BackSide, depthWrite: false } );
+    var backGeo = new THREE.Mesh( new THREE.SphereGeometry( 500, 6, 6 ), backMat );
     scene.add( backGeo );
 
     // PLANETE FOR RAY TEST
@@ -287,6 +302,14 @@ function init() {
     container.addEventListener( 'mousedown', onMouseDown, false );
     container.addEventListener( 'mouseout', onMouseUp, false );
     container.addEventListener( 'mouseup', onMouseUp, false );
+    if( body.addEventListener ){
+        body.addEventListener( 'mousewheel', onMouseWheel, false ); //chrome
+        body.addEventListener( 'DOMMouseScroll', onMouseWheel, false ); // firefox
+    }else if( body.attachEvent ){
+        body.attachEvent("onmousewheel" , onMouseWheel); // ie
+    }
+
+    loop();
 }
 
 function resize() {
@@ -304,6 +327,7 @@ function loop() {
         THREE.AnimationHandler.update( delta*2 );
         nloop = 0;
     }
+
     renderer.render( scene, camera );
     displayInfo();
 }
@@ -433,6 +457,8 @@ function removeP(i) {
         deadanim.push(an);
     	deadMeshs.push(mesh);
 
+
+
     	panim[i].stop();
     	//panim[i].reset();
     	meshs[i].remove( meshs[i].children[0]);
@@ -443,7 +469,7 @@ function removeP(i) {
 }
 
 //-----------------------------------
-// RAYTEST
+// MATH
 //-----------------------------------
 
 function rayTest(sh) {
@@ -459,11 +485,16 @@ function rayTest(sh) {
 
 			var p = intersects[0].point.clone();
 			var rX = (360-getElementAngle(0,0, p.x, p.z));
-			var l = Math.sqrt( p.x * p.x + p.z * p.z );
-			var rY = ((270)+getElementAngle(0,0, l, p.y));
+			var l = Math.sqrt( p.x * p.x + p.z * p.z )
+			var rY = ((270)+getElementAngle(0,0, l, p.y))
+
+			if(axeY && axeZ){
+				axeY.rotation.y = rX*ToRad;
+			    axeZ.rotation.x = rY*ToRad;
+			}
 
 			var px = (360-(rX))-90;
-			if(px<0)px = 360+px;
+			if(px<0)px = 360+px
 			var py = (270/2)+((rY-270-90)*2);
 
 			warMouse = [px*SimSetting.worldScale, py*SimSetting.worldScale, 0];
@@ -473,10 +504,6 @@ function rayTest(sh) {
 	    }
 	} 
 }
-
-//-----------------------------------
-// MATH
-//-----------------------------------
 
 function getElementAngle(x1, y1, x2, y2) {
 	var adj = x2 - x1;
@@ -499,14 +526,33 @@ function latLongToVector3(Lat, Lon, radius) {
     return p;
 }
 
+function Orbit(origine, horizontal, vertical, distance) {
+    var p = new THREE.Vector3();
+    var phi = vertical*ToRad;
+    var theta = horizontal*ToRad;
+    p.x = (distance * Math.sin(phi) * Math.cos(theta)) + origine.x;
+    p.z = (distance * Math.sin(phi) * Math.sin(theta)) + origine.z;
+    p.y = (distance * Math.cos(phi)) + origine.y;
+    return p;
+}
+
 //-----------------------------------
-// MOUSE
+// MOUSE & NAVIGATION 
 //-----------------------------------
+
+function moveCamera() {
+    camera.position.copy(Orbit(center, cam.horizontal, cam.vertical, cam.distance));
+    camera.lookAt(center);
+}
 
 function onMouseDown(e) {
     e.preventDefault();
     mouse.mx = ( e.clientX / vsize.x ) * 2 - 1;
 	mouse.my = - ( e.clientY / vsize.y ) * 2 + 1;
+    mouse.ox = e.clientX;
+    mouse.oy = e.clientY;
+    mouse.h = cam.horizontal;
+    mouse.v = cam.vertical;
     mouse.down = true;
     mouse.click = true;
 
@@ -515,33 +561,32 @@ function onMouseDown(e) {
 
 function onMouseUp(e) {
     mouse.down = false;
+    document.body.style.cursor = 'auto';
 }
 
 function onMouseMove(e) {
     e.preventDefault();
-   // if ( mouse.down ) {
+    if ( mouse.down ) {
+        document.body.style.cursor = 'move';
+        cam.horizontal = ((e.clientX - mouse.ox) * 0.3) + mouse.h;
+        cam.vertical = (-(e.clientY - mouse.oy) * 0.3) + mouse.v;    
+        moveCamera();
+    }else{
     	mouse.mx = ( e.clientX / vsize.x ) * 2 - 1;
 	    mouse.my = - ( e.clientY / vsize.y ) * 2 + 1;
 	    rayTest(false);
-	//}
+	}
 }
 
-//-----------------------------------------------------
-//  TEXTURE
-//-----------------------------------------------------
-
-function gradTexture(color) {
-    var c = document.createElement("canvas");
-    var ct = c.getContext("2d");
-    c.width = 16; c.height = 256;
-    var gradient = ct.createLinearGradient(0,0,0,256);
-    var i = color[0].length;
-    while(i--){ gradient.addColorStop(color[0][i],color[1][i]); }
-    ct.fillStyle = gradient;
-    ct.fillRect(0,0,16,256);
-    var texture = new THREE.Texture(c);
-    texture.needsUpdate = true;
-    return texture;
+function onMouseWheel(e) {
+    e.preventDefault();
+    var delta = 0;
+    if(e.wheelDelta){delta=e.wheelDelta*-1;}
+    else if(e.detail){delta=e.detail*20;}
+    cam.distance+=(delta/80);
+    if(cam.distance<0.01)cam.distance = 0.01;
+    if(cam.distance>150)cam.distance = 150;
+    moveCamera(); 
 }
 
 </script>
