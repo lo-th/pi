@@ -14,15 +14,11 @@ body { background:#3C89CD; font:11px sans-serif; color:#AAAA66; overflow-x:hidde
 #debug{ position:absolute; padding:5px; right:0; bottom:0; text-align:right; width:100px; pointer-events:none; }
 </style>
 <script src="js/three.min.js"></script>
-<script src="js/easing/EasePack.min.js"></script>
-<script src="js/TweenLite.min.js"></script>
+<script src="js/tween.min.js"></script>
 <script src="js/loaders/sea3d/SEA3D.js"></script>
 <script src="js/loaders/sea3d/SEA3DLoader.js"></script>
 <script src="js/loaders/sea3d/SEA3DLZMA.js"></script>
-<script src="js/v3d.js"></script>
-<script src="js/minimap.js"></script>
-<script src="js/player.js"></script>
-<!--<script src="js/ease.js"></script>-->
+<script src="js/game.min.js"></script>
 
 </head>
 
@@ -31,9 +27,6 @@ body { background:#3C89CD; font:11px sans-serif; color:#AAAA66; overflow-x:hidde
 <div id="debug"></div>
 
 <script>
-
-//var obj = {myProp:0};
-// TweenLite.to(obj, 2, {myProp:100});
 
 var d = document.getElementById('debug');
 var v3d;
@@ -44,14 +37,10 @@ window.onload = init;
 function init(){
     v3d = new V3D.Base();
     loop();
-
-    //ee = new V.Ease();
-    //ee.set({v1:0, v2:1});
-    //ee.set({v1:1, v2:0});
-
 };
 
 function loop(){
+	TWEEN.update();
     v3d.render();
     d.innerHTML = v3d.f[0] + 'fps | ' + v3d.key;
     requestAnimationFrame(loop);
