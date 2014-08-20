@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>3D.FPS</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<link rel="icon" href="favicon.ico" />
+<style>
+*{margin:0; padding:0; -o-user-select:none; -ms-user-select:none; -khtml-user-select:none; -webkit-user-select:none; -moz-user-select: none;}
+html,body{width:100%;height:100%}
+body { background:#3C89CD; font:11px sans-serif; color:#AAAA66; overflow-x:hidden; }
+#container{ min-width:480px; min-height:480px; width:100%; height:100%; overflow:hidden; text-align:center; }
+#container canvas{position:absolute;top:0;left:0;width:100%;height:100%}
+#debug{ position:absolute; padding:5px; right:0; bottom:0; text-align:right; width:100px; pointer-events:none; }
+</style>
+<script src="js/three.min.js"></script>
+<script src="js/easing/EasePack.min.js"></script>
+<script src="js/TweenLite.min.js"></script>
+<script src="js/loaders/sea3d/SEA3D.js"></script>
+<script src="js/loaders/sea3d/SEA3DLoader.js"></script>
+<script src="js/loaders/sea3d/SEA3DLZMA.js"></script>
+<script src="js/v3d.js"></script>
+<script src="js/minimap.js"></script>
+<script src="js/player.js"></script>
+<!--<script src="js/ease.js"></script>-->
+
+</head>
+
+<body>
+<div id="container"></div>
+<div id="debug"></div>
+
+<script>
+
+//var obj = {myProp:0};
+// TweenLite.to(obj, 2, {myProp:100});
+
+var d = document.getElementById('debug');
+var v3d;
+var ee
+
+window.onload = init;
+
+function init(){
+    v3d = new V3D.Base();
+    loop();
+
+    //ee = new V.Ease();
+    //ee.set({v1:0, v2:1});
+    //ee.set({v1:1, v2:0});
+
+};
+
+function loop(){
+    v3d.render();
+    d.innerHTML = v3d.f[0] + 'fps | ' + v3d.key;
+    requestAnimationFrame(loop);
+};
+
+</script>
+</body>
+</html>
